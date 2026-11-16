@@ -1,5 +1,7 @@
 /* ================= render + navigation ================= */
 const $=id=>document.getElementById(id);
+/* public visitors get a clean toolbar. Add ?studio to the address to see profile, template and the fact catalog */
+const STUDIO=/[?&]studio\b/.test(location.search); if(!STUDIO)document.body.classList.add('pub');
 const track=$('track'), stage=$('stage'), prog=$('prog'), catEl=$('cat');
 let P=PROFILES[0], M=null, DECK=[], over={}, idx=0, mode='cards';
 const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;

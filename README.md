@@ -37,6 +37,10 @@ Click **Save card** for the current card or **Save all** for a zip of every card
 
 Instagram has no web posting for stories, so post from the phone app. (Instagram's own data export does not contain any fitness data, so there is nothing to import from it.)
 
+## Studio mode
+
+Visitors see a clean toolbar. Add `?studio` to the app address (`app.html?studio`) to also get the sample profile picker, the template picker and the **Fact catalog**. This is meant for the person building and tuning the cards.
+
 ## Try it without your data
 
 The app ships with five synthetic profiles (steady runner, marathon trainee, cyclist, weekend hiker, couch to 5K). They show how different people get different cards and facts.
