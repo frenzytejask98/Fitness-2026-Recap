@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2026 Story Cards Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gloock&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: 9:16 story cards. One saturated colour per card, a live graphic on top, a giant condensed number, one comparison line picked from a catalog by the person's own metrics. Sizes use cqw so a card looks the same in the viewer, the overview and a screenshot. */
+:root{
+  --ink:#0A0F1F; --page:#E7E9EF; --muted:#5B6478; --line:#D3D7E1; --accent:#2B3BFF;
+  --display:'Anybody','Arial Narrow',Impact,sans-serif;
+  --body:'Familjen Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Martian Mono',ui-monospace,Menlo,monospace;
+  --chrome:'Martian Mono',ui-monospace,Menlo,monospace;
+  --h:calc(100dvh - 64px);
+  color-scheme:light;
+}
+@media(min-width:700px){:root{--h:min(calc(100dvh - 72px),940px)}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font:16px/1.4 var(--body);overscroll-behavior:none}
+body{height:100dvh;display:flex;align-items:center;justify-content:center;padding-top:56px}
+button,select{font:500 11px/1 var(--chrome);letter-spacing:.02em}
+.top{position:fixed;z-index:30;top:0;left:0;right:0;display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--page);overflow-x:auto;white-space:nowrap}
+.top label{display:flex;gap:6px;align-items:center;font:500 10px var(--chrome);text-transform:uppercase;color:var(--muted)}
+.top select,.top button{background:var(--ink);color:#fff;border:0;border-radius:99px;padding:9px 12px;cursor:pointer;text-transform:none}
+.top button.on{background:var(--accent)}
+.top select{appearance:none;-webkit-appearance:none;padding-right:12px}
+.top :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.spacer{flex:1}
+.stage{position:relative;width:min(100vw,calc(var(--h) * 9 / 16));aspect-ratio:9/16;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+@media(min-width:700px){.stage{border-radius:28px;overflow:hidden;box-shadow:0 24px 60px rgba(10,15,31,.25)}}
+.viewport{position:absolute;inset:0;overflow:hidden}
+.track{display:flex;height:100%;transition:transform .38s cubic-bezier(.2,.8,.2,1)}
+.progress{position:absolute;z-index:5;top:14px;left:14px;right:14px;display:flex;gap:3px;pointer-events:none}
+.progress i{flex:1;height:3px;border-radius:3px;background:var(--pfg,#fff);opacity:.3}
+.progress i.on{opacity:1}
+.hint{position:fixed;left:0;right:0;bottom:6px;text-align:center;font:11px var(--mono);color:var(--muted);pointer-events:none}
+@media(max-width:699px){.hint{display:none}}
+
+/* card */
+.card{flex:0 0 100%;height:100%;position:relative;overflow:hidden;container-type:inline-size;background:var(--bg);color:var(--fg)}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 105% 104%,transparent 0 7cqw,color-mix(in srgb,var(--fg) 8%,transparent) 7cqw 7.5cqw)}
+.inner{position:relative;height:100%;display:flex;flex-direction:column;padding:13cqw 8cqw 6cqw}
+.kick{font:500 3.2cqw/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.main{flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.6cqw;min-height:0}
+.viz{height:25cqw;flex:none;margin-bottom:3cqw}
+.viz svg{display:block;width:100%;height:100%;overflow:visible}
+.big{font:900 31cqw/.8 var(--display);color:var(--hi);letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin-left:-.5cqw;white-space:nowrap}
+.big.m{font-size:24cqw}.big.s{font-size:17cqw;line-height:.9}.big.xs{font-size:12cqw;line-height:.94;white-space:normal}
+.unit{font:800 7.4cqw/1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+h2{font:800 7.8cqw/.98 var(--display);text-transform:uppercase;margin:1.5cqw 0 0;text-wrap:balance}
+.txt{font-size:4.5cqw;line-height:1.32;margin:0;opacity:.92}
+.txt b{font-weight:600}
+.quirk{margin-top:2cqw;font-size:4.7cqw;line-height:1.3;font-weight:500}
+.quirk b{font-weight:700;color:var(--hi)}
+.foot{display:flex;justify-content:space-between;font:500 2.7cqw/1 var(--mono);letter-spacing:.1em;margin-top:3.5cqw;opacity:.7}
+.rows{display:grid;margin-top:1cqw}
+.row{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2cqw;padding:2.6cqw 0;border-top:.5cqw solid color-mix(in srgb,var(--fg) 30%,transparent)}
+.row .d{font:800 6.8cqw/1 var(--display);text-transform:uppercase}
+.row .t{font:500 3.3cqw/1.2 var(--mono);text-align:right}
+.row .t b{font:900 8cqw/1 var(--display);color:var(--hi);display:block;font-variant-numeric:tabular-nums;margin-bottom:1cqw}
+.grid6{display:grid;grid-template-columns:1fr 1fr;gap:3.5cqw 5cqw;margin-top:2cqw}
+.grid6 .n{font:900 calc(12cqw*var(--gs,1))/.95 var(--display);color:var(--hi);font-variant-numeric:tabular-nums}
+.grid6 .l{font:500 3cqw/1.25 var(--mono);opacity:.85;margin-top:1cqw}
+.list{margin:0;padding:0;list-style:none;display:grid;gap:2.4cqw}
+.list li{display:grid;grid-template-columns:7cqw 1fr;gap:2cqw;font-size:4.2cqw;line-height:1.25}
+.list li span:first-child{font:900 8cqw/.9 var(--display);color:var(--hi)}
+.conf{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.conf i{position:absolute;top:-4cqw;width:2.2cqw;height:3.6cqw;border-radius:.6cqw;animation:fall var(--t,2.4s) cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes fall{to{transform:translate(var(--x),150cqw) rotate(var(--r))}}
+
+/* themes: six colour roles k1..k6 per theme */
+.k1{--bg:#2B3BFF;--fg:#fff;--hi:#FFE68A}
+.k2{--bg:#0A0F1F;--fg:#fff;--hi:#AEB7FF}
+.k3{--bg:#FF5A3C;--fg:#0A0F1F;--hi:#fff}
+.k4{--bg:#FFE68A;--fg:#0A0F1F;--hi:#2B3BFF}
+.k5{--bg:#D9D2FF;--fg:#0A0F1F;--hi:#2B3BFF}
+.k6{--bg:#BFF0DC;--fg:#0A0F1F;--hi:#0A5C40}
+.t-night .k1{--bg:#0B1226;--fg:#F1F4FF;--hi:#8FA2FF}
+.t-night .k2{--bg:#170B26;--fg:#F1F4FF;--hi:#D59BFF}
+.t-night .k3{--bg:#0A1B1D;--fg:#F1F4FF;--hi:#7EE3D0}
+.t-night .k4{--bg:#1C1308;--fg:#F8F3EA;--hi:#FFC46B}
+.t-night .k5{--bg:#0F1530;--fg:#F1F4FF;--hi:#9DB4FF}
+.t-night .k6{--bg:#0A1A14;--fg:#EFFAF4;--hi:#86E0A8}
+.t-sun .k1{--bg:linear-gradient(165deg,#FFD9A8,#FFADB5);--fg:#2A1038;--hi:#8A1670}
+.t-sun .k2{--bg:linear-gradient(165deg,#C9E4FF,#E1CCFF);--fg:#1D1240;--hi:#3F2BA8}
+.t-sun .k3{--bg:linear-gradient(165deg,#FFF0B8,#FFCFA0);--fg:#3A1308;--hi:#B3361B}
+.t-sun .k4{--bg:linear-gradient(165deg,#E8D5FF,#FFC9DE);--fg:#2A1038;--hi:#6A1B9A}
+.t-sun .k5{--bg:linear-gradient(165deg,#C9F4E2,#C4DEFF);--fg:#0E2A33;--hi:#0B5E8A}
+.t-sun .k6{--bg:linear-gradient(165deg,#FFC9B3,#FFE3A8);--fg:#3A1308;--hi:#A02A14}
+.t-receipt .k1,.t-receipt .k2,.t-receipt .k3,.t-receipt .k4,.t-receipt .k5,.t-receipt .k6{--bg:#F6F5F0;--fg:#14161C;--hi:#14161C}
+.t-receipt .card::before{display:none}
+.t-receipt .foot{border-top:.5cqw dashed currentColor;padding-top:3cqw}
+.t-receipt .kick::before{content:"* * * ";}
+.t-receipt .viz{filter:grayscale(1)}
+
+
+/* typography system: each template has its own display face. Sizes scale by --bs (big) and --ds (headings) because the faces differ in width. */
+.big,.unit,h2,.row .d,.row .t b,.grid6 .n,.list li span:first-child{font-family:var(--display);font-weight:var(--dw,900);font-variation-settings:var(--dvar,"wdth" 62)}
+.big{font-size:calc(35cqw*var(--bs,1))}.big.m{font-size:calc(27cqw*var(--bs,1))}.big.s{font-size:calc(19cqw*var(--bs,1))}.big.xs{font-size:calc(13cqw*var(--bs,1))}
+.unit{font-size:calc(7cqw*var(--ds,1));color:var(--hi);margin-top:1.2cqw}h2{font-size:calc(8.6cqw*var(--ds,1))}
+.row .d{font-size:calc(6.8cqw*var(--ds,1))}
+.t-night{--gs:.66;--display:'Dela Gothic One','Arial Black',Impact,sans-serif;--dw:400;--dvar:normal;--bs:.6;--ds:.74}
+.t-sun{--gs:.95;--display:'Gloock','Georgia',serif;--dw:400;--dvar:normal;--bs:.78;--ds:.9}
+.t-sun h2,.t-sun .unit,.t-sun .row .d{text-transform:none;letter-spacing:-.005em}
+.t-receipt{--gs:.7;--display:'Azeret Mono',ui-monospace,Menlo,monospace;--body:'Azeret Mono',ui-monospace,Menlo,monospace;--mono:'Azeret Mono',ui-monospace,Menlo,monospace;--dw:600;--dvar:normal;--bs:.7;--ds:.72}
+.t-receipt h2,.t-receipt .unit{letter-spacing:-.02em}
+
+/* graphics: final state is the resting state; motion plays when a card becomes active */
+.sh{stroke:var(--hi);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sf{stroke:var(--fg);fill:none;stroke-linecap:round}
+.fh{fill:var(--hi)} .ff{fill:var(--fg)}
+.o2{opacity:.2}.o4{opacity:.4}.o6{opacity:.6}
+.dr{stroke-dasharray:1;stroke-dashoffset:0}
+.rs,.pp,.gx{transform-box:fill-box}
+.rs{transform-origin:50% 100%}.pp{transform-origin:50% 50%}.gx{transform-origin:0 50%}
+.arc{stroke-dasharray:var(--f) 1}
+.sp{transform-origin:150px 45px}
+.hb{transform-box:fill-box;transform-origin:50% 50%}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{from{transform:scale(0)}60%{transform:scale(1.3)}to{transform:scale(1)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes arcin{from{stroke-dasharray:0 1}to{stroke-dasharray:var(--f) 1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.2)}30%{transform:scale(1)}45%{transform:scale(1.1)}}
+@keyframes tw{0%,100%{opacity:.2}50%{opacity:1}}
+@keyframes ecg{from{stroke-dashoffset:0}to{stroke-dashoffset:-1}}
+@keyframes slidein{from{transform:translateX(10cqw);opacity:0}to{transform:none;opacity:1}}
+@keyframes glow{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes drive{from{transform:translateX(0)}to{transform:translateX(-24px)}}
+@keyframes flipin{from{transform:rotate(-200deg) scale(.2)}to{transform:none}}
+.active .dr{animation:draw 1.5s cubic-bezier(.4,0,.2,1) both;animation-delay:var(--d,0s)}
+.active .rs{animation:rise .8s cubic-bezier(.2,.9,.2,1) both;animation-delay:var(--d,0s)}
+.active .pp{animation:pop .55s ease-out both;animation-delay:var(--d,0s)}
+.active .gx{animation:grow 1.1s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+.active .arc{animation:arcin 1.4s cubic-bezier(.3,.7,.2,1) both;animation-delay:var(--d,0s)}
+.active .sp{animation:spin var(--s,4s) linear infinite}
+.active .hb{animation:beat var(--bt,1s) ease-in-out infinite}
+.active .tw{animation:tw 2.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+.active .ecg{stroke-dasharray:.3 .7;animation:ecg 1.6s linear infinite}
+.active .row{animation:slidein .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--k,0) * .13s)}
+.active .glow{animation:glow 1.4s ease-in-out infinite}
+.active .drive{animation:drive .5s linear infinite}
+.active .flip{animation:flipin .9s cubic-bezier(.2,.9,.2,1) both}
+.flip{transform-origin:150px 45px}
+
+.lab{font:500 9.5px var(--mono);fill:var(--fg)}
+.viz text{letter-spacing:.02em}
+
+/* overview mode */
+body.grid{display:block;overflow:auto;height:auto;padding-top:56px}
+body.grid .stage{width:auto;max-width:1100px;margin:0 auto;aspect-ratio:auto;padding:16px;border-radius:0;box-shadow:none;overflow:visible}
+body.grid .viewport{position:static;overflow:visible}
+body.grid .track{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;transform:none!important;height:auto;transition:none}
+body.grid .card{flex:none;aspect-ratio:9/16;height:auto;border-radius:18px;cursor:pointer}
+body.grid .progress,body.grid .hint{display:none}
+
+/* catalog */
+.cat{display:none;width:100%;max-width:980px;margin:0 auto;padding:16px 16px 80px;align-self:flex-start}
+body.cat-on{display:block;height:auto;overflow:auto}
+body.cat-on .stage,body.cat-on .hint{display:none}
+body.cat-on .cat{display:block}
+.cat h1{font:900 clamp(44px,8vw,84px)/.88 var(--display);text-transform:uppercase;margin:12px 0 10px}
+.cat h3{font:800 28px/1 var(--display);text-transform:uppercase;margin:0}
+.cat p{color:var(--muted);max-width:68ch;margin:0 0 12px}
+.cat .stats{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 22px}
+.pill{font:500 12px/1 var(--mono);padding:7px 10px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+.pill.hot{background:var(--accent);border-color:var(--accent);color:#fff}
+.how{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin:0 0 26px}
+.how div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.how b{display:block;font:800 20px/1 var(--display);text-transform:uppercase;margin-bottom:6px}
+.how span{font-size:14px;color:var(--muted)}
+.slot{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.slot header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.slot header span{font:12px var(--mono);color:var(--muted)}
+.tw-x{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 8px 8px 0}
+td{padding:9px 8px 9px 0;border-top:1px solid var(--line);font-size:14px;vertical-align:middle}
+td.m{font:12px var(--mono);color:var(--muted)}
+tr.picked td:first-child{font-weight:600}
+tr.skip td{color:#8A91A3}
+.st{font:500 11px/1 var(--mono);padding:5px 8px;border-radius:99px;background:#ECEEF3;color:var(--muted);white-space:nowrap}
+.st.pick{background:var(--accent);color:#fff}.st.ok{background:#E3F3EC;color:#127A55}
+.tag{font:500 10px/1 var(--mono);padding:4px 6px;border-radius:6px;background:#EEF0F5;color:var(--muted)}
+.use{font:500 11px/1 var(--mono);border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:99px;padding:6px 10px;cursor:pointer}
+.use:focus-visible{outline:3px solid var(--accent)}
+@media(prefers-reduced-motion:reduce){.track{transition:none}.card *{animation:none!important}}
+
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.dlg.on{display:flex}
+.dlg .box{background:#16161a;color:#f4f1ea;border:1px solid #333;border-radius:16px;max-width:560px;width:100%;padding:22px;max-height:90vh;overflow:auto;font-family:system-ui,sans-serif}
+.dlg h3{margin:0 0 6px;font-size:20px}.dlg p{margin:0 0 12px;font-size:13px;line-height:1.45;color:#b9b6ad}
+.dz{border:2px dashed #555;border-radius:12px;padding:16px;margin:10px 0;text-align:center;cursor:pointer;font-size:14px}
+.dz.over{border-color:#fc4c02;background:#241a14}.dz.ok{border-color:#3ecf8e;border-style:solid}.dz.bad{border-color:#ff5c5c}
+.dz small{display:block;color:#8d8a82;margin-top:4px;font-size:12px}
+.dz .bar{height:4px;background:#333;border-radius:2px;margin-top:8px;overflow:hidden;display:none}.dz .bar i{display:block;height:100%;width:0;background:#fc4c02}
+.dlg .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.dlg button{font:inherit;padding:9px 16px;border-radius:999px;border:1px solid #444;background:#222;color:inherit;cursor:pointer}
+.dlg button.go{background:#fc4c02;border-color:#fc4c02;color:#fff}.dlg button:disabled{opacity:.4;cursor:default}
+#btnMine{background:#fc4c02;border-color:#fc4c02;color:#fff}
+.flist{list-style:none;margin:6px 0;padding:0;font-size:12px;color:#b9b6ad;max-height:110px;overflow:auto}.flist li{padding:2px 0}.dlg details{margin:8px 0;font-size:13px}.dlg summary{cursor:pointer;color:#fc4c02}.src p{margin:6px 0}</style>
+</head>
+<body class="t-bold">
+<div class="top">
+  <label>Profile <select id="selProfile" aria-label="Sample profile"></select></label>
+  <label>Template <select id="selTheme" aria-label="Template"><option value="t-bold">Bold</option><option value="t-night">Night</option><option value="t-sun">Sunrise</option><option value="t-receipt">Receipt</option></select></label>
+  <span class="spacer"></span>
+  <button id="btnSave" type="button" title="Save this card as a 1080x1920 image for Instagram">Save card</button>
+  <button id="btnSaveAll" type="button" title="Save every card as images in one zip">Save all</button>
+  <button id="btnMine" type="button">Use my data</button>
+  <button id="btnCards" type="button" class="on">Cards</button>
+  <button id="btnGrid" type="button">All cards</button>
+  <button id="btnCat" type="button">Fact catalog</button>
+</div>
+<div class="stage" id="stage"><div class="progress" id="prog"></div><div class="viewport"><div class="track" id="track"></div></div></div>
+<div class="cat" id="cat"></div>
+<div class="hint">tap, swipe or use arrow keys. Press G for all cards</div>
+<div class="dlg" id="dlg"><div class="box">
+<h3>Use my data</h3>
+<p>Drop your export files here, all at once if you like. The page works out what each one is. Everything is read inside this page and nothing is uploaded.</p>
+<div class="dz" id="dz" tabindex="0"><b>Drop files or click to choose</b><small>zip, csv, json, fit, gpx, tcx, xml</small><div class="bar"><i></i></div><input type="file" id="fIn" multiple hidden></div>
+<ul id="flist" class="flist"></ul>
+<details><summary>Where do I get these?</summary><div class="src">
+<p><b>Strava:</b> Settings, My Account, Download or Delete Your Account, Request Your Archive.</p>
+<p><b>Apple Health:</b> Health app, your picture, Export All Health Data (VO₂ max, resting heart rate, sleep, steps).</p>
+<p><b>Garmin:</b> Garmin Connect, Activities, Export CSV. Or request your full data at garmin.com/account/datamanagement.</p>
+<p><b>Whoop:</b> App, Menu, Data Export (resting heart rate, sleep, workouts).</p>
+<p><b>Polar:</b> account.polar.com, Download your data.</p>
+<p><b>Google Fit:</b> takeout.google.com, choose Fit (steps).</p>
+<p><b>Coros, Suunto and others:</b> export workouts as FIT, GPX or TCX and drop them in, or sync to Strava and use that export.</p></div></details>
+<p id="msg"></p>
+<div class="row2"><button id="dClose" type="button">Close</button><button id="dGo" class="go" type="button" disabled>Build my recap</button></div>
+</div></div>
+<script>
+/* ================= sample profiles + data generator (replace with real exports) ================= */
+const DAY=86400000, T0=Date.UTC(2026,0,1), T1=Date.UTC(2026,10,16);
+const NSAMPLE=Math.round((T1-T0)/DAY)+1;
+let N=NSAMPLE;
+const setN=n=>{N=n};
+const off=(new Date(T0).getUTCDay()+6)%7;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'];
+const MONFULL=['January','February','March','April','May','June','July','August','September','October','November'];
+const DAYN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0), mean=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+const nf=new Intl.NumberFormat('en-GB',{maximumFractionDigits:0});
+const pace=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const hms=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
+const fd=ms=>new Date(ms).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+const hash01=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return ((h>>>0)%10000)/10000};
+
+const PROFILES=[
+ {id:'steady',name:'Steady runner',seed:2026,runP:[.85,.15,.7,.2,.7,.1,.75],ramp:[.8,1.1],km:[5,7.5],long:[9,18],pace:[372,334],hr:[157,149],cad:[166,173],morning:.55,longHour:9,
+  rideP:[0,0,0,.25,0,.25,0],rideKm:[20,45],rideSpd:24,walkP:[0,0,0,0,0,0,.3],walkKm:[4,6],hikes:4,strP:[0,.35,0,0,0,.35,0],vo2:[41.2,45.6],rhr:[62.4,55.6],sleep:[6.85,7.35],steps:[7600,7600]},
+ {id:'marathon',name:'Marathon trainee',seed:77,runP:[.95,.25,.85,.55,.85,.15,.9],ramp:[.85,1.05],km:[8,12],long:[16,30],pace:[342,306],hr:[158,150],cad:[170,177],morning:.8,longHour:7,
+  rideP:[0,0,0,.1,0,.1,0],rideKm:[25,40],rideSpd:25,walkP:[0,0,0,0,0,0,0],walkKm:[3,4],hikes:1,strP:[0,.3,0,.3,0,0,0],vo2:[49,54.2],rhr:[54,48.6],sleep:[7.1,7.5],steps:[9000,9000]},
+ {id:'cyclist',name:'Cyclist first',seed:314,runP:[.25,.05,.2,.05,.2,0,.2],ramp:[.8,1],km:[5,7],long:[8,12],pace:[385,362],hr:[152,147],cad:[164,168],morning:.4,longHour:9,
+  rideP:[.55,.1,.25,.35,.2,.3,.55],rideKm:[30,85],rideSpd:27,walkP:[0,0,0,0,0,0,.15],walkKm:[3,5],hikes:2,strP:[0,.25,0,.25,0,0,0],vo2:[44,51],rhr:[60,53.5],sleep:[7.0,7.4],steps:[6500,6500]},
+ {id:'hiker',name:'Weekend hiker',seed:909,runP:[.3,.05,.3,.05,.3,.05,.3],ramp:[.7,1],km:[4,6],long:[6,9],pace:[405,388],hr:[150,146],cad:[160,164],morning:.5,longHour:10,
+  rideP:[0,0,0,0,0,0,0],rideKm:[20,30],rideSpd:20,walkP:[.55,.15,.25,.15,.25,.1,.7],walkKm:[5,11],hikes:15,strP:[0,0,.2,0,0,0,0],vo2:[38,41.2],rhr:[66,62.8],sleep:[7.0,7.35],steps:[11200,11200]},
+ {id:'beginner',name:'Couch to 5K to 10K',seed:555,runP:[.8,.1,.7,.15,.7,.05,.7],ramp:[.2,1.15],km:[2.4,6.2],long:[3.5,9.5],pace:[470,392],hr:[170,155],cad:[158,168],morning:.45,longHour:9,
+  rideP:[0,0,0,0,0,0,0],rideKm:[20,30],rideSpd:20,walkP:[.25,.1,.2,.1,.2,.1,.3],walkKm:[3,6],hikes:2,strP:[0,.15,0,.2,0,0,0],vo2:[32,38.2],rhr:[72,64.6],sleep:[6.4,7.2],steps:[5800,9200]}
+];
+
+function makeYear(P){
+  const R=mulberry32(P.seed), rr=(a,b)=>a+(b-a)*R();
+  const gauss=()=>{let s=0;for(let i=0;i<6;i++)s+=R();return (s-3)/Math.sqrt(.5)};
+  const lerp=(a,t)=>a[0]+(a[1]-a[0])*t;
+  const hikeSet=new Set(); while(hikeSet.size<P.hikes)hikeSet.add(110+Math.floor(rr(0,170)));
+  const acts=[];
+  for(let i=0;i<N;i++){
+    const t=i/(N-1), date=T0+i*DAY, dow=new Date(date).getUTCDay(), rest=i>=152&&i<=168;
+    if(R()<P.runP[dow]*(rest?.15:1)*lerp(P.ramp,t)){
+      const long=dow===0, km=Math.max(2,long?lerp(P.long,t)+gauss()*1.5:lerp(P.km,t)+gauss());
+      const pc=lerp(P.pace,Math.pow(t,.8))+gauss()*6+(long?10:0);
+      const hour=dow===6?9+Math.floor(R()*2):long?P.longHour+Math.floor(R()*2):(R()<P.morning?6+Math.floor(R()*2):17+Math.floor(R()*3));
+      acts.push({type:'Run',i,date,dow,hour,km,sec:km*pc,pace:pc,elev:km*rr(5,14),hr:Math.round(lerp(P.hr,t)+gauss()*2.5-(long?2:0)),cad:Math.round(lerp(P.cad,t)+gauss()*1.2)});
+    }
+    if(R()<P.rideP[dow]*(rest?.5:1)){const km=rr(P.rideKm[0],P.rideKm[1]);acts.push({type:'Ride',i,date,dow,hour:dow===0||dow===6?8+Math.floor(R()*3):17,km,sec:km/P.rideSpd*3600,elev:km*rr(4,10)})}
+    if(R()<P.strP[dow]){acts.push({type:'Strength',i,date,dow,hour:R()<.5?7:18,km:0,sec:3000+rr(-400,600),elev:0})}
+    if(R()<P.walkP[dow]){const km=rr(P.walkKm[0],P.walkKm[1]);acts.push({type:'Walk',i,date,dow,hour:14+Math.floor(R()*3),km,sec:km/5*3600,elev:km*rr(4,12)})}
+    if(hikeSet.has(i)){const km=rr(11,19);acts.push({type:'Hike',i,date,dow,hour:9,km,sec:km/3.2*3600,elev:rr(450,800)})}
+  }
+  const daySteps=new Array(N).fill(0);
+  for(let i=0;i<N;i++){
+    const t=i/(N-1), todays=acts.filter(a=>a.i===i);
+    let s=lerp(P.steps,t)+gauss()*1500;
+    todays.forEach(a=>{if(a.type==='Run')s+=a.km*450;if(a.type==='Walk')s+=a.km*1300;if(a.type==='Hike')s+=a.km*1000;if(a.type==='Ride')s+=1200});
+    daySteps[i]=Math.max(2500,Math.round(s));
+  }
+  const ease=t=>1-Math.pow(1-t,1.6), vo2=[],rhr=[],sleep=[];
+  for(let i=0;i<N;i+=7){const t=i/(N-1),dip=(i>=150&&i<=180)?.5:0;
+    vo2.push({i,v:P.vo2[0]+(P.vo2[1]-P.vo2[0])*ease(t)+gauss()*.25-dip});
+    rhr.push({i,v:P.rhr[0]+(P.rhr[1]-P.rhr[0])*ease(t)+gauss()*.7+dip});
+    sleep.push({i,v:P.sleep[0]+(P.sleep[1]-P.sleep[0])*t+gauss()*.28});}
+  return {acts,daySteps,vo2,rhr,sleep};
+}
+
+/* ================= metrics: everything the fact catalog can use ================= */
+const head=(a,n)=>mean(a.slice(0,n).map(p=>p.v)), tail=(a,n)=>mean(a.slice(-n).map(p=>p.v));
+function computeM(Y,P){
+  const {acts,daySteps,vo2,rhr,sleep}=Y, M={P};
+  const runs=acts.filter(a=>a.type==='Run');
+  const by={}; [...new Set(['Run','Ride','Walk','Hike','Strength',...acts.map(a=>a.type)])].forEach(t=>{const a=acts.filter(x=>x.type===t);by[t]={n:a.length,km:sum(a,x=>x.km),hrs:sum(a,x=>x.sec)/3600,elev:sum(a,x=>x.elev)}});
+  M.by=by; M.runs=runs.length;
+  M.distKm=sum(acts,a=>a.km); M.elev=sum(acts,a=>a.elev); M.hrs=sum(acts,a=>a.sec)/3600;
+  M.runKm=by.Run.km; M.rideKm=by.Ride.km; M.rides=by.Ride.n; M.rideHrs=by.Ride.hrs;
+  M.hikes=by.Hike.n; M.hikeElev=by.Hike.elev; M.hikeKm=by.Hike.km; M.walkKm=by.Walk.km;
+  M.strength=by.Strength.n; M.strengthHrs=by.Strength.hrs;
+  const dayAny=new Array(N).fill(false); acts.forEach(a=>dayAny[a.i]=true);
+  M.activeDays=dayAny.filter(Boolean).length; M.N=N;
+  let st=0,c=0; dayAny.forEach(a=>{c=a?c+1:0;st=Math.max(st,c)}); M.streak=st;
+  const W=Math.ceil((N+off)/7), weekKm=new Array(W).fill(0), weekAct=new Array(W).fill(0);
+  acts.forEach(a=>{weekKm[Math.floor((a.i+off)/7)]+=a.km}); dayAny.forEach((a,i)=>{if(a)weekAct[Math.floor((i+off)/7)]++});
+  M.weekAct=weekAct; M.bestWeek=Math.max(...weekKm); M.wkNow=mean(weekKm.slice(-9,-1)); M.wkThen=mean(weekKm.slice(0,8));
+  M.activePerWeek=M.activeDays/(N/7);
+  M.monthKm=MON.map((m,k)=>sum(acts.filter(a=>new Date(a.date).getUTCMonth()===k),a=>a.km));
+  M.monthN=MON.map((m,k)=>acts.filter(a=>new Date(a.date).getUTCMonth()===k).length);
+  const pm=M.monthKm.indexOf(Math.max(...M.monthKm)); M.peak={k:pm,name:MONFULL[pm],km:M.monthKm[pm],n:M.monthN[pm]};
+  M.monthRide=MON.map((m,k)=>sum(acts.filter(a=>a.type==='Ride'&&new Date(a.date).getUTCMonth()===k),a=>a.km));
+  const cum=[];let e=0;const byDay=new Array(N).fill(0);acts.forEach(a=>byDay[a.i]+=a.elev);
+  for(let i=0;i<N;i++){e+=byDay[i];if(i%7===0||i===N-1)cum.push(e)} M.cumElev=cum;
+  M.hoursBy=Object.entries(by).map(([k,v])=>[k,v.hrs]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  M.sports=M.hoursBy.filter(x=>by[x[0]].n>=8);
+  const kmSports=Object.entries(by).map(([k,v])=>[k,v.km]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]); M.kmSports=kmSports;
+  M.topShare=kmSports.length?kmSports[0][1]/M.distKm:1;
+  M.longestAct=acts.filter(a=>a.km>0).reduce((m,a)=>a.km>m.km?a:m,{km:0});
+  M.longestRun=runs.length?runs.reduce((m,a)=>a.km>m.km?a:m):{km:0,sec:0,date:T0};
+  M.climbRun=runs.length?runs.reduce((m,a)=>a.elev>m.elev?a:m):{elev:0};
+  // running trends
+  const f56=runs.filter(a=>a.i<56), l56=runs.filter(a=>a.i>=N-56);
+  M.hasRuns=runs.length>=20&&f56.length>=3&&l56.length>=3;
+  if(M.hasRuns){
+    M.pace0=sum(f56,a=>a.sec)/sum(f56,a=>a.km); M.pace1=sum(l56,a=>a.sec)/sum(l56,a=>a.km);
+    const okv=a=>a.map(x=>x.hr).filter(v=>isFinite(v)&&v>0), okc=a=>a.map(x=>x.cad).filter(v=>isFinite(v)&&v>0);
+    M.hr0=mean(okv(f56)); M.hr1=mean(okv(l56)); M.hasHr=okv(f56).length>2&&okv(l56).length>2;
+    M.cad0=mean(okc(f56)); M.cad1=mean(okc(l56)); M.hasCad=okc(f56).length>2&&okc(l56).length>2;
+    M.gain=M.pace0-M.pace1; M.speed=3600/M.pace1;
+    M.runSteps=sum(runs,a=>a.sec/60*(a.cad||0)); M.runHeartbeats=sum(runs,a=>a.sec/60*(a.hr||0));
+    M.fast=runs.filter(a=>a.km>=Math.min(5,M.longestRun.km)).reduce((m,a)=>a.pace<m.pace?a:m);
+    // personal bests, estimated from the best run that was at least that long
+    M.prs=[['5K',5,.94],['10K',10,.96],['Half marathon',21.0975,.97]].filter(([n,d])=>M.longestRun.km>=d).map(([n,d,f])=>{
+      const c=runs.filter(a=>a.km>=d), best=c.reduce((m,a)=>a.pace<m.pace?a:m), early=c.filter(a=>a.i<56);
+      let now=best.pace*d*f, then=early.length?Math.min(...early.map(a=>a.pace))*d*f:M.pace0*d*1.03;
+      if(then<=now)then=now*1.04; return {d:n,dist:d,now,then,when:best.date}});
+  }
+  M.hasVo2=vo2.length>=8;M.hasRhr=rhr.length>=8;M.hasSleep=sleep.length>=8;
+  M.vo2a=head(vo2,4);M.vo2b=tail(vo2,4);M.vo2gain=M.vo2b-M.vo2a;
+  M.rhra=head(rhr,4);M.rhrb=tail(rhr,4);M.rhrDrop=M.rhra-M.rhrb;
+  M.sleepA=head(sleep,4);M.sleepB=tail(sleep,4);M.sleepMin=(M.sleepB-M.sleepA)*60;
+  M.sleepSeries=sleep;
+  const rec=daySteps.filter(v=>v>0);M.hasSteps=rec.length>=20;M.steps=sum(rec,v=>v);M.stepsAvg=mean(rec);M.stepsKm=M.steps*.75/1000;
+  M.stepsBest=daySteps.reduce((m,v,i)=>v>m.v?{v,i}:m,{v:0,i:0});M.over10=daySteps.filter(v=>v>=10000).length;
+  M.stepsThen=mean(daySteps.slice(0,56).filter(v=>v>0));M.stepsNow=mean(daySteps.slice(-56).filter(v=>v>0));
+  const heat={};acts.forEach(a=>{const k=a.dow+'-'+a.hour;heat[k]=(heat[k]||0)+a.sec/60});M.heat=heat;
+  M.heatMax=Math.max(...Object.values(heat));const tp=Object.entries(heat).sort((a,b)=>b[1]-a[1])[0][0].split('-').map(Number);M.topDow=tp[0];M.topHour=tp[1];
+  const real=acts.filter(a=>a.type!=='Strength');
+  M.dawn=real.filter(a=>a.hour<8).length/real.length;M.eve=real.filter(a=>a.hour>=17).length/real.length;
+  M.weekend=acts.filter(a=>a.dow===0||a.dow===6).length/acts.length;
+  M.sundayLong=runs.filter(a=>a.dow===0&&a.km>=10).length;
+  M.projKm=M.distKm+(M.distKm/N)*(365-N)*1.0;
+  return M;
+}
+/* ================= fact catalog =================
+   Each fact belongs to a slot (one card). calc(M) gives a number r. fit(r, kind) turns it into 0..1:
+   0 means "not impressive or not true enough, skip". The picker multiplies by a theme-diversity factor
+   and adds a small deterministic jitter per person, then takes the best fact for each slot. */
+const X=r=>r>=100?nf.format(r):r>=10?r.toFixed(0):r.toFixed(1);
+const B=s=>`<b>${s}</b>`;
+function fit(r,kind){
+  if(!isFinite(r)||r<=0)return 0;
+  if(kind==='x'){return r<.9?0:r<1.5?.7:r<=25?1:r<=100?.75:r<=1000?.4:0}
+  if(kind==='n'){return r>=30&&r<=30000?.8:0}
+  if(kind==='pct'){return r<3?0:r<=100?.7:0}
+  if(kind==='min'){return r>=3&&r<=180?.9:0}
+  if(kind==='fixed')return .5;
+  return 0;
+}
+const KINDS={x:'multiple, best between 1.5× and 25×',n:'count, best between 30 and 30,000',pct:'percent, needs 3% or more',min:'minutes or seconds, needs a visible gain',fixed:'always true, low priority'};
+const FACTS=[];
+const add=f=>FACTS.push(f);
+/* factories */
+const xf=(slot,id,theme,name,m,unit,mk,rule)=>add({slot,id,theme,name,kind:'x',rule,calc:M=>m(M)/unit,text:(r,M)=>r<1.5?mk.one(name):mk.many(X(r),name)});
+const nfc=(slot,id,theme,name,m,unit,tpl,rule)=>add({slot,id,theme,name,kind:'n',rule,calc:M=>m(M)/unit,text:(r,M)=>tpl(nf.format(r),name)});
+const ROUTE={one:n=>`That is about ${B('one '+n)}, end to end.`,many:(x,n)=>`That is ${B(x+'×')} ${n}, end to end.`};
+const TOWER={one:n=>`That is about ${B('one '+n)}, stacked up.`,many:(x,n)=>`That is ${B(x+'×')} the ${n}, stacked up.`};
+const PEAK={one:n=>`That is about ${B('one '+n)}, climbed from sea level.`,many:(x,n)=>`That is ${B(x+'×')} ${n}, climbed from sea level.`};
+const FLY={one:n=>`That is about ${B('one '+n)} of pure movement.`,many:(x,n)=>`That is ${B(x+'×')} ${n}.`};
+
+/* DISTANCE (all sports, km) */
+[['London to Paris',344],['Tokyo to Osaka',510],['Los Angeles to San Francisco',615],['London to Edinburgh',650],['The Camino de Santiago',800],['Sydney to Melbourne',880],['Paris to Rome',1100],['New York to Chicago',1150],['Land’s End to John o’Groats',1400],['The Tour de France route',3400],['The Appalachian Trail',3500],['Route 66',3940]]
+ .forEach(([n,k])=>xf('distance','d-'+n.toLowerCase().replace(/\W+/g,'-'),'geo',n,M=>M.distKm,k,ROUTE,`total km ÷ ${nf.format(k)} km`));
+xf('distance','d-marathon','sport','marathons',M=>M.distKm,42.195,{one:()=>`That is about ${B('one marathon')}.`,many:(x)=>`That is ${B(x+' marathons')} back to back.`},'total km ÷ 42.195 km');
+xf('distance','d-channel','water','English Channel crossings, Dover to Calais, on foot',M=>M.distKm,33.8,{one:n=>`That is about ${B('one crossing')}.`,many:(x,n)=>`That is ${B(x)} ${n}.`},'total km ÷ 33.8 km');
+nfc('distance','d-laps','track','laps of a 400 m track',M=>M.distKm,.4,(x,n)=>`That is ${B(x)} ${n}. The track knows you by name.`,'total km ÷ 0.4 km');
+nfc('distance','d-pitches','ball','football pitches, end to end',M=>M.distKm,.105,(x,n)=>`That is ${B(x)} ${n}.`,'total km ÷ 0.105 km');
+add({slot:'distance',id:'d-earth',theme:'space',name:'Share of the way around the Earth',kind:'pct',rule:'total km ÷ 40,075 km × 100',calc:M=>M.distKm/40075*100,text:r=>`That is ${B(r.toFixed(1)+'%')} of the way around the Earth.`});
+
+/* CLIMB (elevation gain, m) */
+[['Statue of Liberty',93],['Big Ben',96],['Eiffel Tower',330],['Empire State Building',443],['Burj Khalifa',828]].forEach(([n,h])=>xf('climb','c-'+n.toLowerCase().replace(/\W+/g,'-'),'tower',n,M=>M.elev,h,TOWER,`elevation ÷ ${h} m`));
+[['Ben Nevis',1345],['Mount Fuji',3776],['Mont Blanc',4808],['Kilimanjaro',5895],['Everest',8849]].forEach(([n,h])=>xf('climb','c-'+n.toLowerCase().replace(/\W+/g,'-'),'peak',n,M=>M.elev,h,PEAK,`elevation ÷ ${nf.format(h)} m`));
+nfc('climb','c-floors','tower','floors of a skyscraper',M=>M.elev,3.5,(x,n)=>`That is ${B(x)} ${n}. Take the stairs, obviously.`,'elevation ÷ 3.5 m');
+nfc('climb','c-stairs','tower','stair steps',M=>M.elev,.17,(x,n)=>`That is ${B(x)} ${n}.`,'elevation ÷ 0.17 m');
+
+/* TIME (all sports, hours) */
+xf('time','t-flight-lny','travel','flights from London to New York',M=>M.hrs,8,{one:()=>`That is about ${B('one flight')} from London to New York.`,many:(x,n)=>`That is ${B(x)} ${n}. You earned the window seat.`},'hours ÷ 8 h');
+xf('time','t-flight-syd','travel','flights from Sydney to Los Angeles',M=>M.hrs,14,{one:()=>`That is about ${B('one flight')} from Sydney to Los Angeles.`,many:(x,n)=>`That is ${B(x)} ${n}.`},'hours ÷ 14 h');
+xf('time','t-apollo','space','Apollo 11 round trips to the Moon',M=>M.hrs,195,{one:()=>`That is about ${B('one whole Apollo 11 trip')} to the Moon and back.`,many:(x,n)=>`That is ${B(x+'×')} the whole Apollo 11 trip to the Moon and back.`},'hours ÷ 195 h');
+xf('time','t-nights','body','full nights of sleep',M=>M.hrs,8,{one:()=>`That is about ${B('one full night')} of sleep, spent moving.`,many:(x,n)=>`That is ${B(x)} ${n}, spent moving instead.`},'hours ÷ 8 h');
+xf('time','t-films','screen','feature films',M=>M.hrs,2,{one:()=>`That is about ${B('one feature film')}.`,many:(x,n)=>`That is ${B(x)} ${n} you did not need to watch.`},'hours ÷ 2 h');
+xf('time','t-workweeks','work','full-time work weeks',M=>M.hrs,40,{one:()=>`That is about ${B('one full-time work week')}.`,many:(x,n)=>`That is ${B(x)} ${n}, done on your own terms.`},'hours ÷ 40 h');
+nfc('time','t-matches','ball','football matches',M=>M.hrs,1.5,(x,n)=>`That is ${B(x)} ${n}, with extra time.`,'hours ÷ 1.5 h');
+nfc('time','t-sauna','sauna','sauna sessions',M=>M.hrs*3,1,(x,n)=>`Enough time for ${B(x)} ${n} of 20 minutes.`,'hours × 3');
+
+/* CONSISTENCY */
+[['a two-week holiday',14],['a whole Tour de France, rest days included',23],['Dry January, but better',31],['all of Lent',40]].forEach(([n,d])=>add({slot:'consistency',id:'k-'+d,theme:'calendar',name:n,kind:'x',rule:`longest streak ÷ ${d} days`,calc:M=>M.streak/d,text:(r,M)=>r<1.5?`Your streak matches ${B(n)}.`:`Your streak is ${B(X(r)+'×')} ${n}.`}));
+add({slot:'consistency',id:'k-week',theme:'plain',name:'Active days per week',kind:'fixed',rule:'active days ÷ weeks',calc:M=>M.activePerWeek,text:(r,M)=>`You moved on ${B(r.toFixed(1)+' days a week')}, every week of the year.`});
+add({slot:'consistency',id:'k-rest',theme:'plain',name:'Rest days earned',kind:'fixed',rule:'days without activity',calc:M=>M.N-M.activeDays,text:(r,M)=>`The other ${B(nf.format(r)+' days')} were rest. Every one of them earned.`});
+add({slot:'consistency',id:'k-every',theme:'plain',name:'One day in every N',kind:'fixed',rule:'days ÷ active days',calc:M=>M.N/M.activeDays,text:(r,M)=>`You were active ${B('1 day in every '+r.toFixed(1))}.`});
+
+/* BIGGEST MONTH */
+add({slot:'month',id:'m-perday',theme:'plain',name:'Kilometres per day in the best month',kind:'fixed',rule:'peak month km ÷ days',calc:M=>M.peak.km/30,text:(r,M)=>`That is ${B(r.toFixed(1)+' km')} on average, every single day of the month.`,ok:M=>M.peak.km>=60});
+xf('month','m-5k','sport','5K runs in one month',M=>M.peak.km,5,{one:()=>'',many:(x)=>`That is the same as ${B(x+' parkruns')} in one month.`},'peak month km ÷ 5 km');
+xf('month','m-week','sport','marathons in your biggest week',M=>M.bestWeek,42.195,{one:()=>`Your biggest week was about ${B('one marathon')} of movement.`,many:(x)=>`Your biggest week was ${B(x+'×')} a marathon.`},'best week km ÷ 42.195 km');
+xf('month','m-channel','water','Channel crossings in one month',M=>M.peak.km,33.8,{one:()=>'',many:(x)=>`That month alone was ${B(x)} Channel crossings on foot.`},'peak month km ÷ 33.8 km');
+
+/* RIDE */
+xf('ride','r-stage','sport','Tour de France stages',M=>M.rideKm,170,{one:()=>`That is about ${B('one Tour de France stage')}.`,many:(x)=>`That is ${B(x)} full Tour de France stages.`},'ride km ÷ 170 km');
+xf('ride','r-lp','geo','London to Paris rides',M=>M.rideKm,344,{one:()=>`That is about ${B('London to Paris')}, by bike.`,many:(x)=>`That is ${B(x+'×')} London to Paris, by bike.`},'ride km ÷ 344 km');
+xf('ride','r-lejog','geo','Land’s End to John o’Groats',M=>M.rideKm,1400,{one:()=>`That is about ${B('Land’s End to John o’Groats')}.`,many:(x)=>`That is ${B(x+'×')} Land’s End to John o’Groats.`},'ride km ÷ 1,400 km');
+xf('ride','r-films','screen','feature films in the saddle',M=>M.rideHrs,2,{one:()=>'',many:(x)=>`That is ${B(x)} feature films, but you were outside.`},'saddle hours ÷ 2 h');
+
+/* HIKE */
+xf('hike','h-nevis','peak','Ben Nevis',M=>M.hikeElev,1345,{one:()=>`Your hikes add up to about ${B('one Ben Nevis')}.`,many:(x)=>`Your hikes add up to ${B(x+'×')} Ben Nevis.`},'hike elevation ÷ 1,345 m');
+xf('hike','h-fuji','peak','Mount Fuji',M=>M.hikeElev,3776,{one:()=>`Your hikes add up to about ${B('one Mount Fuji')}.`,many:(x)=>`Your hikes add up to ${B(x+'×')} Mount Fuji.`},'hike elevation ÷ 3,776 m');
+xf('hike','h-marathon','sport','marathons on trails',M=>M.hikeKm,42.195,{one:()=>'',many:(x)=>`Your trail days cover ${B(x)} marathons of distance, with views.`},'hike km ÷ 42.195 km');
+
+/* STRENGTH */
+add({slot:'strength',id:'s-week',theme:'plain',name:'Sessions per week',kind:'fixed',rule:'sessions ÷ weeks',calc:M=>M.strength/(N/7),text:(r,M)=>`That is about ${B(r.toFixed(1)+' sessions a week')}, all year.`});
+xf('strength','s-films','screen','feature films under the bar',M=>M.strengthHrs,2,{one:()=>'',many:(x)=>`That is ${B(x)} feature films of lifting heavy things.`},'strength hours ÷ 2 h');
+
+/* SPEED (needs enough runs) */
+const sp=(id,theme,name,kind,rule,calc,text,ok)=>add({slot:'speed',id,theme,name,kind,rule,calc,text,ok:M=>M.hasRuns&&(!ok||ok(M))});
+sp('p-marathon','sport','Minutes saved over a marathon','min','pace gain × 42.195 km',M=>M.gain*42.195/60,(r)=>`Over a marathon, that is ${B(Math.round(r)+' minutes')} back in your pocket.`);
+sp('p-5k','sport','Seconds saved over a 5K','min','pace gain × 5 km',M=>M.gain*5,(r)=>`A 5K at your new pace is ${B(Math.round(r)+' seconds')} quicker.`,M=>M.gain*5>=20&&M.gain*5<180);
+sp('p-walk','body','Speed vs a brisk walk','x','speed ÷ 5 km/h',M=>M.speed/5,(r,M)=>`You now average ${B(M.speed.toFixed(1)+' km/h')}, ${B(X(r)+'×')} a brisk walk.`);
+sp('p-chicken','animal','Speed vs a sprinting chicken','x','speed ÷ 14 km/h',M=>M.speed/14,(r,M)=>`At ${B(M.speed.toFixed(1)+' km/h')} you are as fast as a ${B('sprinting chicken')}. Respect.`);
+sp('p-bolt','sport','Share of Usain Bolt’s 100 m average speed','pct','speed ÷ 37.6 km/h × 100',M=>M.speed/37.6*100,(r)=>`Your average speed is ${B(Math.round(r)+'%')} of Usain Bolt’s average over 100 m.`,M=>M.speed/37.6*100>=20);
+sp('p-steps','body','Steps taken while running','x','cadence × running minutes ÷ 1M',M=>M.runSteps/1e6,(r)=>`You took about ${B(X(r)+' million steps')} while running. Each one counted.`,M=>M.hasCad);
+sp('p-beats','body','Heartbeats while running','x','heart rate × running minutes ÷ 1M',M=>M.runHeartbeats/1e6,(r)=>`Your heart beat about ${B(X(r)+' million times')} while you ran. A very long drum solo.`,M=>M.hasHr);
+
+/* PERSONAL BEST line */
+const pr=(id,theme,name,calc,text)=>add({slot:'pr',id,theme,name,kind:'fixed',rule:'from your first and best 5K, 10K or half',calc,text,ok:M=>M.hasRuns&&M.prs&&M.prs.length>0});
+pr('b-jan','plain','January self',M=>M.prs[0].then-M.prs[0].now,(r,M)=>`Your January self would finish ${B(hms(r))} behind you over ${M.prs[0].d}.`);
+pr('b-total','plain','Total time saved',M=>sum(M.prs,p=>p.then-p.now),(r,M)=>`Across ${M.prs.length===1?'your PR':'your PRs'} you saved ${B(hms(r))} in one year.`);
+
+/* VO2 MAX */
+const vo=(id,theme,name,kind,rule,calc,text)=>add({slot:'vo2',id,theme,name,kind,rule,calc,text,ok:M=>M.hasVo2&&M.vo2gain>0.5});
+vo('v-pct','body','Percent bigger engine','pct','gain ÷ starting VO₂ × 100',M=>M.vo2gain/M.vo2a*100,r=>`That is a ${B(Math.round(r)+'% bigger engine')}. Same body, more horsepower.`);
+vo('v-years','body','Years of age-related decline reversed','x','gain ÷ 0.4 per year',M=>M.vo2gain/.4,r=>`Roughly ${B(X(r)+' years')} of normal age-related decline, turned back.`);
+
+/* RESTING HEART RATE */
+const rh=(id,theme,name,kind,rule,calc,text)=>add({slot:'rhr',id,theme,name,kind,rule,calc,text,ok:M=>M.hasRhr&&M.rhrDrop>=2});
+rh('r-day','body','Fewer heartbeats per day','n','drop × 1,440 min',M=>M.rhrDrop*1440,r=>`That is ${B(nf.format(r)+' fewer heartbeats')} every single day. Your heart gets to chill.`);
+rh('r-year','body','Fewer heartbeats per year','x','drop × 1,440 × 365 ÷ 1M',M=>M.rhrDrop*1440*365/1e6,r=>`That is about ${B(X(r)+' million fewer beats')} a year.`);
+rh('r-pct','body','Percent slower resting pulse','pct','drop ÷ start × 100',M=>M.rhrDrop/M.rhra*100,r=>`A resting pulse ${B(Math.round(r)+'% slower')} than in January.`);
+
+/* SLEEP */
+const sl=(id,theme,name,kind,rule,calc,text)=>add({slot:'sleep',id,theme,name,kind,rule,calc,text,ok:M=>M.hasSleep&&M.sleepMin>=8});
+sl('z-days','body','Extra days of sleep per year','x','gain min × 365 ÷ 1,440',M=>M.sleepMin*365/1440,r=>`That is ${B(X(r)+' extra days')} of sleep per year. Professional-level napping.`);
+sl('z-cycles','body','Extra 90 minute sleep cycles per year','n','gain min × 365 ÷ 90',M=>M.sleepMin*365/90,r=>`That is ${B(nf.format(r)+' extra sleep cycles')} a year, each one a full dream cycle.`);
+sl('z-hours','body','Extra hours per year','n','gain min × 365 ÷ 60',M=>M.sleepMin*365/60,r=>`That is ${B(nf.format(r)+' more hours')} of sleep a year.`);
+
+/* STEPS */
+[['London to Paris',344],['London to Edinburgh',650],['Paris to Rome',1100],['New York to Chicago',1150],['Land’s End to John o’Groats',1400],['New York to Dallas',2200],['Route 66',3940]]
+ .forEach(([n,k])=>xf('steps','st-'+n.toLowerCase().replace(/\W+/g,'-'),'geo',n,M=>M.stepsKm,k,{one:n=>`Your daily steps alone cover about ${B('one '+n)}.`,many:(x,n)=>`Your daily steps alone cover ${B(x+'×')} ${n}.`},`step km ÷ ${nf.format(k)} km`));
+xf('steps','st-shoes','shoes','pairs of running shoes retired',M=>M.stepsKm,700,{one:()=>`That is about ${B('one pair of shoes')} worn out.`,many:(x,n)=>`That is ${B(x)} ${n} (700 km each).`},'step km ÷ 700 km');
+add({slot:'steps',id:'st-earth',theme:'space',name:'Share of the way around the Earth',kind:'pct',rule:'step km ÷ 40,075 km × 100',calc:M=>M.stepsKm/40075*100,text:r=>`Your steps alone are ${B(r.toFixed(1)+'%')} of the way around the Earth.`});
+xf('steps','st-best','body','half marathons of steps in one day',M=>M.stepsBest.v*.75/1000,21.0975,{one:()=>`Your best day was about ${B('one half marathon')} of steps.`,many:(x)=>`Your best day was ${B(x+'×')} a half marathon of steps.`},'best day steps × 0.75 m ÷ 21.1 km');
+add({slot:'steps',id:'st-10k',theme:'plain',name:'Days over 10,000 steps',kind:'fixed',rule:'days with 10,000+ steps',calc:M=>M.over10,text:(r,M)=>`${B(nf.format(r)+' days')} went past 10,000 steps.`,ok:M=>M.over10>=20});
+
+/* RHYTHM */
+const rt=(id,theme,name,kind,rule,calc,text,ok)=>add({slot:'rhythm',id,theme,name,kind,rule,calc,text,ok});
+rt('y-dawn','sun','Early starts','pct','share before 8 am × 100',M=>M.dawn*100,r=>`${B(Math.round(r)+'%')} of your workouts started before 8 am. The sunrise is your accomplice.`,M=>M.dawn>=.3);
+rt('y-eve','sun','Evening sessions','pct','share after 5 pm × 100',M=>M.eve*100,r=>`${B(Math.round(r)+'%')} of your workouts happened after 5 pm. Golden hour, every time.`,M=>M.eve>=.3);
+rt('y-weekend','calendar','Weekend share','pct','weekend sessions ÷ all × 100',M=>M.weekend*100,r=>`${B(Math.round(r)+'%')} of your sessions landed on a weekend. You make weekends count.`,M=>M.weekend>=.4);
+rt('y-sunday','calendar','Long Sunday runs','n','Sunday runs of 10 km or more',M=>M.sundayLong*30,(r,M)=>`${B(M.sundayLong+' long Sunday runs')}. That is a tradition now.`,M=>M.sundayLong>=8);
+rt('y-slot','plain','Standing appointment','fixed','always true',M=>1,(r,M)=>`Nobody books a meeting on ${B(DAYN[M.topDow]+' at '+String(M.topHour).padStart(2,'0')+':00')}. It is sacred.`);
+
+/* ================= archetypes ================= */
+const TYPES=[
+ {id:'dawn',t:'The Dawn Patrol',s:M=>M.dawn/.5,why:M=>`${Math.round(M.dawn*100)}% of your workouts started before 8 am.`,hype:'Up before the world.'},
+ {id:'eve',t:'The Golden Hour Regular',s:M=>M.eve/.5,why:M=>`${Math.round(M.eve*100)}% of your workouts happened after 5 pm.`,hype:'Chasing the light.'},
+ {id:'sun',t:'The Sunday Ritualist',s:M=>M.sundayLong/40,why:M=>`${M.sundayLong} long runs on Sundays. Same slot, every week.`,hype:'Sundays belong to you.'},
+ {id:'comeback',t:'The Comeback Engine',s:M=>M.hasRuns?M.gain/45:0,why:M=>`${Math.round(M.gain||0)} seconds per km faster than in January.`,hype:'Look how far you came.'},
+ {id:'consistency',t:'The Consistency Machine',s:M=>(M.activeDays/N)/.7,why:M=>`You moved on ${Math.round(M.activeDays/N*100)}% of all days.`,hype:'You just keep showing up.'},
+ {id:'hill',t:'The Hill Hunter',s:M=>(M.elev/Math.max(1,M.distKm))/30,why:M=>`${Math.round(M.elev/M.distKm)} metres climbed for every kilometre.`,hype:'Uphill is home.'},
+ {id:'weekend',t:'The Weekend Warrior',s:M=>M.weekend/.65,why:M=>`${Math.round(M.weekend*100)}% of your sessions were on a weekend.`,hype:'Weekends, fully used.'},
+ {id:'multi',t:'The Multi-Sport Magician',s:M=>M.sports.length/4,why:M=>`${M.sports.length} different sports, each done at least 8 times.`,hype:'Never just one thing.'},
+ {id:'long',t:'The Long Run Legend',s:M=>M.longestRun.km/32,why:M=>`Your longest run was ${M.longestRun.km.toFixed(1)} km.`,hype:'Distance is your language.'},
+ {id:'steps',t:'The Step Collector',s:M=>M.stepsAvg/14000,why:M=>`${nf.format(M.stepsAvg)} steps a day, on average.`,hype:'Every step counts, and you counted.'},
+ {id:'pedal',t:'The Pedal Pusher',s:M=>M.rideKm/Math.max(1,M.distKm)/.55,why:M=>`${Math.round(M.rideKm/M.distKm*100)}% of your distance was on a bike.`,hype:'Wheels up.'},
+ {id:'rest',t:'The Recovery Pro',s:M=>M.sleepMin/50,why:M=>`${Math.round(M.sleepMin)} more minutes of sleep a night than in January.`,hype:'Rest is training too.'},
+ {id:'heart',t:'The Heart of an Athlete',s:M=>M.rhrDrop/10,why:M=>`Your resting heart rate dropped ${Math.round(M.rhrDrop)} bpm.`,hype:'Built from the inside.'}
+];
+
+/* ================= goals for next year ================= */
+const GOALS=[
+ {id:'g-dist',theme:'dist',p:M=>.5,text:M=>`Move ${B(nf.format(Math.ceil(M.projKm*1.1/50)*50)+' km')} in 2027`,rule:'forecast × 1.1, rounded to 50'},
+ {id:'g-5k',theme:'pr',p:M=>M.hasRuns&&M.prs[0]&&M.prs[0].d==='5K'?.9-Math.min(.5,((M.prs[0].now-1)%60)/120):0,text:M=>{const t=Math.floor((M.prs[0].now-1)/60)*60;return `Break ${B(hms(t))} for 5K, only ${B(Math.round(M.prs[0].now-t)+' s')} away`},rule:'next whole minute below your 5K PR'},
+ {id:'g-half',theme:'pr',p:M=>M.hasRuns&&M.longestRun.km>=10&&!M.prs.find(p=>p.d==='Half marathon')?.8:0,text:M=>`Run your first ${B('half marathon')}`,rule:'longest run 10 km or more, no half yet'},
+ {id:'g-10k',theme:'pr',p:M=>M.hasRuns&&M.longestRun.km>=5&&M.longestRun.km<10?.8:0,text:M=>`Run your first ${B('10K')}`,rule:'longest run between 5 and 10 km'},
+ {id:'g-vo2',theme:'body',p:M=>M.hasVo2?.6:0,text:M=>`Push VO₂ max to ${B((Math.round((M.vo2b+1.5)*10)/10).toFixed(1))}`,rule:'current + 1.5'},
+ {id:'g-sleep',theme:'body',p:M=>M.hasSleep&&M.sleepB<7.5?.65:0,text:M=>`Average ${B('7.5 hours')} of sleep`,rule:'only if sleep is under 7.5 h'},
+ {id:'g-streak',theme:'cal',p:M=>.45,text:M=>`Beat your ${B(M.streak+' day streak')} and reach ${B(M.streak+7)}`,rule:'longest streak + 7'},
+ {id:'g-sport',theme:'sport',p:M=>M.topShare>.85?.85:0,text:M=>`Add a second sport: ${B('swim, row or ski')}`,rule:'one sport is over 85% of distance'},
+ {id:'g-lift',theme:'sport',p:M=>M.strength<30?.55:0,text:M=>`Lift ${B('twice a week')} for the full year`,rule:'fewer than 30 strength sessions'},
+ {id:'g-steps',theme:'steps',p:M=>!M.hasSteps?0:M.stepsAvg<10000?.6:.3,text:M=>M.stepsAvg<10000?`Average ${B('10,000 steps')} a day`:`Protect your ${B(nf.format(M.stepsAvg)+' step')} daily average`,rule:'10,000 if below, else protect'},
+ {id:'g-climb',theme:'dist',p:M=>.4,text:M=>`Climb ${B(nf.format(Math.ceil(M.elev*1.15/500)*500)+' m')} in total`,rule:'elevation × 1.15, rounded to 500'}
+];
+
+/* ================= the picker ================= */
+function evalSlot(slot,M,usedThemes,forced){
+  const rows=FACTS.filter(f=>f.slot===slot).map(f=>{
+    const allowed=!f.ok||f.ok(M); let r=NaN,fv=0;
+    if(allowed){r=f.calc(M);fv=fit(r,f.kind)}
+    const div=usedThemes.has(f.theme)?.6:1, jit=hash01(M.P.id+f.id)*.12;
+    const score=fv>0?fv*div+jit:0;
+    return {f,allowed,r,fit:fv,div,score};
+  });
+  let best=rows.filter(x=>x.score>0).sort((a,b)=>b.score-a.score)[0]||null;
+  if(forced){const o=rows.find(x=>x.f.id===forced&&x.fit>0);if(o)best=o}
+  return {rows,best};
+}
+/* ================= graphics (final state is the resting state; motion plays when a card turns active) ================= */
+const svg=inner=>`<div class="viz"><svg viewBox="0 0 300 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${inner}</svg></div>`;
+const f1=v=>(+v).toFixed(1);
+function barsViz(vals,hi){
+  const n=vals.length,mx=Math.max(...vals)||1,bw=300/n,isHi=(k)=>typeof hi==='function'?hi(k,vals[k]):k===hi;
+  let s='<line x1="0" x2="300" y1="85" y2="85" class="sf o4" stroke-width="1"/>';
+  vals.forEach((v,k)=>{const h=Math.max(2,v/mx*74),x=k*bw+bw*.14;
+    s+=`<rect class="rs fh${isHi(k)?'':' o4'}" style="--d:${(k*.05).toFixed(2)}s" x="${x.toFixed(1)}" y="${(85-h).toFixed(1)}" width="${(bw*.72).toFixed(1)}" height="${h.toFixed(1)}" rx="2"/>`});
+  return svg(s);
+}
+const GFX={
+  rings:()=>{let s='<g transform="translate(150 45) scale(1.5) translate(-150 -45)">';[40,29,18].forEach((r,k)=>{s+=`<circle cx="150" cy="45" r="${r}" class="sh o4" stroke-width="2"/><g class="sp" style="--s:${[3.2,4.6,6.4][k]}s"><circle cx="${150+r}" cy="45" r="${5-k}" class="fh"/></g>`});return svg(s+'</g>')},
+  route:(r)=>{const n=Math.max(1,Math.min(10,Math.round(r)));let s='<path d="M12 58 L288 58" class="sh o4" stroke-width="3" stroke-dasharray="2 7"/><path d="M12 58 L288 58" pathLength="1" class="sh dr" stroke-width="4"/><circle cx="12" cy="58" r="6" class="fh"/>';
+    for(let k=1;k<=n;k++){const x=12+k/n*276;s+=`<g class="pp" style="--d:${(.3+k*.12).toFixed(2)}s"><path d="M${x} 58 L${x} 28" class="sh" stroke-width="2"/><path d="M${x} 28 L${x+14} 34 L${x} 40Z" class="fh"/></g>`}
+    return svg(s)},
+  climb:(M)=>{const c=M.cumElev,mx=c[c.length-1]||1,pts=c.map((v,i)=>[2+i/(c.length-1)*296,84-v/mx*72]);const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');const e=pts[pts.length-1];
+    return svg(`<path d="${d} L298 85 L2 85Z" class="fh o2"/><path d="${d}" pathLength="1" class="sh dr" stroke-width="3.5"/><g class="pp" style="--d:1.3s"><circle cx="${e[0]}" cy="${e[1]}" r="6" class="fh"/><path d="M${e[0]} ${e[1]-6} L${e[0]} ${e[1]-24} L${e[0]+16} ${e[1]-18} L${e[0]} ${e[1]-12}" class="sh" stroke-width="2"/></g>`)},
+  donut:(M)=>{const tot=sum(M.hoursBy,x=>x[1]),op=[1,.7,.45,.28,.15];let off2=0,s='<circle cx="62" cy="45" r="30" class="sh o2" stroke-width="14"/>',lab='';
+    M.hoursBy.slice(0,5).forEach(([k,h],i)=>{const f=h/tot;s+=`<circle cx="62" cy="45" r="30" pathLength="1" class="arc sh" transform="rotate(-90 62 45)" style="--f:${f.toFixed(4)};stroke-dashoffset:${(-off2).toFixed(4)};opacity:${op[i]};stroke-linecap:butt;--d:${(i*.15).toFixed(2)}s" stroke-width="14"/>`;off2+=f;
+      if(i<4)lab+=`<circle cx="128" cy="${18+i*20}" r="4.5" class="fh" style="opacity:${op[i]}"/><text x="140" y="${22+i*20}" class="lab">${k} ${nf.format(h)} h</text>`});
+    return svg(s+lab)},
+  weeks:(M)=>barsViz(M.weekAct,(k,v)=>v>=6),
+  months:(M)=>barsViz(M.monthKm,M.peak.k),
+  wheel:()=>{let sp='';for(let k=0;k<8;k++){const a=k*Math.PI/4;sp+=`<line x1="${(150+4*Math.cos(a)).toFixed(1)}" y1="${(42+4*Math.sin(a)).toFixed(1)}" x2="${(150+28*Math.cos(a)).toFixed(1)}" y2="${(42+28*Math.sin(a)).toFixed(1)}" class="sh" stroke-width="1.6" style="opacity:.7"/>`}
+    return svg(`<g class="sp" style="--s:1.4s;transform-origin:150px 42px">${sp}</g><circle cx="150" cy="42" r="32" class="sh" stroke-width="4"/><circle cx="150" cy="42" r="4" class="fh"/><g class="drive"><line x1="-30" x2="340" y1="80" y2="80" class="sf o4" stroke-width="3" stroke-dasharray="14 10"/></g>`)},
+  hike:()=>svg(`<path d="M0 82 L70 32 L100 56 L150 12 L205 62 L240 40 L300 82" pathLength="1" class="sh dr" stroke-width="3.5"/><path d="M0 82 L70 32 L100 56 L150 12 L205 62 L240 40 L300 82Z" class="fh o2"/><g class="pp" style="--d:1.2s"><path d="M150 12 L150 -10 L170 -3 L150 4" class="sh" stroke-width="2.4"/></g>`),
+  dots:(n)=>{const c=Math.min(n,48);let s='';for(let k=0;k<c;k++){const col=k%16,row=Math.floor(k/16);s+=`<circle class="pp fh" style="--d:${(k*.025).toFixed(2)}s" cx="${12+col*18.4}" cy="${16+row*26}" r="6"/>`}return svg(s)},
+  speed:(M)=>{const mx=Math.max(M.speed,3600/M.pace0)*1.1,w0=3600/M.pace0/mx*190,w1=M.speed/mx*190;
+    return svg(`<text x="0" y="31" class="lab">JAN</text><rect x="44" y="18" width="${w0.toFixed(1)}" height="18" rx="9" class="fh o4 gx"/><text x="${(52+w0).toFixed(1)}" y="31" class="lab">${f1(3600/M.pace0)} km/h</text><text x="0" y="69" class="lab">NOW</text><rect x="44" y="56" width="${w1.toFixed(1)}" height="18" rx="9" class="fh gx" style="--d:.25s"/><text x="${(52+w1).toFixed(1)}" y="69" class="lab">${f1(M.speed)} km/h</text>`)},
+  gauge:(M)=>{const fa=(M.vo2a-25)/40,fb=(M.vo2b-25)/40,ang=Math.PI*(1-fb),px=150+70*Math.cos(ang),py=84-70*Math.sin(ang),d='M80 84 A70 70 0 0 1 220 84';
+    return svg(`<path d="${d}" pathLength="1" class="sh o2" stroke-width="12" style="stroke-linecap:butt"/><path d="${d}" pathLength="1" class="sh o4 arc" stroke-width="12" style="--f:${fa.toFixed(3)};stroke-linecap:butt"/><path d="${d}" pathLength="1" class="sh arc" stroke-width="12" style="--f:${fb.toFixed(3)};stroke-linecap:butt;--d:.3s"/><g class="pp" style="--d:1.5s"><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="8" class="fh"/></g><text x="150" y="78" text-anchor="middle" class="lab">${f1(M.vo2a)} to ${f1(M.vo2b)}</text>`)},
+  ecg:(M)=>{const beat=o=>`L${o+30} 50 L${o+36} 32 L${o+42} 68 L${o+50} 12 L${o+58} 62 L${o+64} 50`;let d='M0 50 ';[0,86,172].forEach(o=>d+=beat(o));d+=' L240 50';
+    return svg(`<path d="${d}" pathLength="1" class="sh ecg" stroke-width="3"/><g transform="translate(268 42)"><path class="fh hb" style="--bt:${(60/M.rhrb).toFixed(2)}s" d="M0 -8 C-10 -22 -30 -4 0 22 C30 -4 10 -22 0 -8Z"/></g>`)},
+  sleep:(M)=>{const v=M.sleepSeries,mn=Math.min(...v.map(p=>p.v))-.1,mx=Math.max(...v.map(p=>p.v))+.1,pts=v.map((p,i)=>[4+i/(v.length-1)*220,80-(p.v-mn)/(mx-mn)*62]);
+    const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('');
+    const stars=[[250,14],[286,30],[270,62],[238,48],[292,70]].map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.2" class="fh tw" style="--d:${i*.4}s"/>`).join('');
+    return svg(`<path d="${d}" pathLength="1" class="sh dr" stroke-width="3"/><mask id="moonm"><rect width="300" height="90" fill="#fff"/><circle cx="268" cy="38" r="14" fill="#000"/></mask><circle cx="258" cy="40" r="19" class="fh" mask="url(#moonm)"/>${stars}`)},
+  feet:()=>{let s='';for(let k=0;k<10;k++){const x=16+k*28,y=k%2?58:30;s+=`<ellipse class="pp fh" style="--d:${(k*.12).toFixed(2)}s;opacity:${(.35+k*.065).toFixed(2)}" cx="${x}" cy="${y}" rx="6" ry="10" transform="rotate(${k%2?-12:12} ${x} ${y})"/>`}return svg(s)},
+  heat:(M)=>{const rows=[1,2,3,4,5,6,0],cw=300/17,ch=88/7;let s='';
+    rows.forEach((d,r)=>{for(let c=0;c<17;c++){const h=c+5,v=M.heat[d+'-'+h]||0,top=d===M.topDow&&h===M.topHour;
+      s+=`<rect class="${top?'fh glow':'fh'}" style="opacity:${v?(.2+.8*v/M.heatMax).toFixed(2):.1}" x="${(c*cw+1).toFixed(1)}" y="${(r*ch+1).toFixed(1)}" width="${(cw-2).toFixed(1)}" height="${(ch-2).toFixed(1)}" rx="2.5"/>`}});return svg(s)},
+  badge:()=>{let p='';for(let k=0;k<24;k++){const a=k*Math.PI/12-Math.PI/2,r=k%2?30:42;p+=(k?'L':'M')+(150+r*Math.cos(a)).toFixed(1)+' '+(45+r*Math.sin(a)).toFixed(1)}
+    return svg(`<g class="flip"><path d="${p}Z" class="fh"/><circle cx="150" cy="45" r="20" class="sf" stroke-width="2.5" style="stroke:var(--bg)"/></g>`)},
+  year:()=>{const x=10+(N/365)*280;return svg(`<line x1="10" x2="290" y1="40" y2="40" class="sh o4" stroke-width="10" style="stroke-linecap:butt"/><rect x="10" y="35" width="${(x-10).toFixed(1)}" height="10" rx="2" class="fh gx"/><path d="M${x.toFixed(1)} 40 L290 40" pathLength="1" class="sh dr" stroke-width="3" stroke-dasharray=".04 .03" style="--d:1s"/><g class="pp" style="--d:1s"><circle cx="${x.toFixed(1)}" cy="40" r="8" class="fh"/></g><circle cx="290" cy="40" r="6" class="sh" stroke-width="2.5"/><text x="${(x-12).toFixed(1)}" y="20" class="lab">NOW</text><text x="258" y="72" class="lab">31 DEC</text>`)}
+};
+
+/* ================= deck ================= */
+const pad=n=>String(n).padStart(2,'0');
+const Q=t=>t?`<p class="quirk">${t}</p>`:'';
+const cnt=(n,o={})=>{const dec=o.dec||0,pre=o.pre||'',suf=o.suf||'';return {text:pre+(dec?(+n).toFixed(dec):nf.format(Math.round(n)))+suf,n:Math.abs(n),dec,pre,suf}};
+const SLOT_INFO={distance:['Distance','Total km across every sport, set against a route, a distance or a track.'],climb:['Climbing','Elevation gain set against buildings and mountains.'],time:['Time','Hours spent moving, set against flights, films and missions.'],consistency:['Consistency','Streaks and rhythm of active days.'],month:['Biggest month','Peak month and best week.'],ride:['Cycling','Only for people with 150 km or more on a bike.'],hike:['Hiking','Only for people with 2 or more hikes.'],strength:['Strength','Only for people with 12 or more sessions.'],speed:['Speed','Only for people with enough runs and a pace gain of 5 s/km or more.'],pr:['Personal bests','A fun line for people with a 5K, 10K or half PR.'],vo2:['VO₂ max','Fitness gain from Apple Health.'],rhr:['Resting heart rate','Needs a drop of 2 bpm or more.'],sleep:['Sleep','Needs a gain of 8 minutes a night or more.'],steps:['Steps','Daily steps from Apple Health.'],rhythm:['Rhythm','When and how often you train.']};
+const SLOTS=[
+ {id:'cover',show:M=>true,build:(M,q,ctx)=>({title:'Your 2026 replay',viz:GFX.rings(),big:cnt(M.distKm).text,count:cnt(M.distKm),unit:'kilometres moved',head:ctx.type.hype,
+   body:M.kmSports.slice(0,2).map(([k,v])=>`${B(nf.format(v)+' km')} ${({Run:'running',Ride:'cycling',Walk:'walking',Hike:'hiking',Swim:'swimming',Strength:'lifting'})[k]||k.toLowerCase()}`).join(' and ')+(M.sports.length>2?`, plus ${M.sports.length-2} more ${M.sports.length-2===1?'sport':'sports'}`:'')+'.'})},
+ {id:'distance',facts:'distance',show:M=>true,numbered:1,build:(M,q)=>({title:'Distance',viz:GFX.route(1),big:cnt(M.distKm/(N/7)).text,count:cnt(M.distKm/(N/7)),unit:'km a week',head:'Week after week.',body:`Your biggest week reached ${B(nf.format(M.bestWeek)+' km')}.`,quirk:Q(q)})},
+ {id:'climb',facts:'climb',show:M=>M.elev>=500,numbered:1,build:(M,q)=>({title:'Climbing',viz:GFX.climb(M),big:cnt(M.elev).text,count:cnt(M.elev),unit:'metres climbed',head:'You went up. A lot.',body:'Hills, hikes and everything in between.',quirk:Q(q)})},
+ {id:'time',facts:'time',show:M=>true,numbered:1,build:(M,q)=>({title:'Time',viz:GFX.donut(M),big:cnt(M.hrs).text,count:cnt(M.hrs),unit:'hours moving',head:'Time well spent.',body:`That is ${B((M.hrs/24).toFixed(1)+' full days')} of your year.`,quirk:Q(q)})},
+ {id:'consistency',facts:'consistency',show:M=>true,numbered:1,build:(M,q)=>({title:'Consistency',viz:GFX.weeks(M),big:cnt(M.activeDays).text,count:cnt(M.activeDays),unit:'active days',head:`${Math.round(M.activeDays/N*100)}% of your year.`,body:`Your longest streak was ${B(M.streak+' days')} in a row.`,quirk:Q(q)})},
+ {id:'month',facts:'month',show:M=>M.peak.km>=30,numbered:1,build:(M,q)=>({title:'Biggest month',viz:GFX.months(M),big:M.peak.name.toUpperCase(),bigCls:'s',head:`${nf.format(M.peak.km)} km in one month.`,body:`${M.peak.n} sessions. The month you moved like you had somewhere to be.`,quirk:Q(q)})},
+ {id:'ride',facts:'ride',show:M=>M.rideKm>=150,numbered:1,build:(M,q)=>({title:'Cycling',viz:GFX.wheel(),big:cnt(M.rideKm).text,count:cnt(M.rideKm),unit:'km by bike',head:'Wheels up.',body:`${M.rides} rides and ${B(nf.format(M.rideHrs)+' hours')} in the saddle.`,quirk:Q(q)})},
+ {id:'hike',facts:'hike',show:M=>M.hikes>=2,numbered:1,build:(M,q)=>({title:'Hiking',viz:GFX.hike(),big:cnt(M.hikes).text,count:cnt(M.hikes),unit:'hikes',head:'Trail legend.',body:`${B(nf.format(M.hikeKm)+' km')} and ${B(nf.format(M.hikeElev)+' m')} of climbing on the trail.`,quirk:Q(q)})},
+ {id:'strength',facts:'strength',show:M=>M.strength>=12,numbered:1,build:(M,q)=>({title:'Strength',viz:GFX.dots(M.strength),big:cnt(M.strength).text,count:cnt(M.strength),unit:'strength sessions',head:'Strong where it counts.',body:`${B(nf.format(M.strengthHrs)+' hours')} of lifting, all year.`,quirk:Q(q)})},
+ {id:'speed',facts:'speed',show:M=>M.hasRuns&&M.gain>=5,numbered:1,build:(M,q)=>({title:'Speed',viz:GFX.speed(M),big:cnt(M.gain,{pre:'−',suf:'s'}).text,count:cnt(M.gain,{pre:'−',suf:'s'}),bigCls:'m',unit:'per kilometre',head:M.hasHr&&M.hr1<M.hr0?'Faster, and it felt easier.':'Faster every month.',body:`Pace went from ${B(pace(M.pace0))} to ${B(pace(M.pace1))} per km.`+(M.hasHr?` Heart rate on runs went from ${Math.round(M.hr0)} to ${Math.round(M.hr1)} bpm.`:''),quirk:Q(q)})},
+ {id:'pr',facts:'pr',show:M=>M.hasRuns&&M.prs&&M.prs.length>0,numbered:1,build:(M,q)=>({title:'Personal bests',head:M.prs.length===1?'A new PR. Receipts attached.':`${M.prs.length} PRs. Receipts attached.`,extra:`<div class="rows">${M.prs.map((p,i)=>`<div class="row" style="--k:${i}"><span class="d">${p.d}</span><span class="t"><b>${hms(p.now)}</b>was ${hms(p.then)}, saved ${hms(p.then-p.now)}</span></div>`).join('')}</div>`,quirk:Q(q)})},
+ {id:'vo2',facts:'vo2',show:M=>M.hasVo2&&M.vo2gain>.5,numbered:1,build:(M,q)=>({title:'Fitness',viz:GFX.gauge(M),big:cnt(M.vo2gain,{pre:'+',dec:1}).text,count:cnt(M.vo2gain,{pre:'+',dec:1}),bigCls:'m',unit:'VO₂ max',head:'Your engine got an upgrade.',body:`From ${B(f1(M.vo2a))} to ${B(f1(M.vo2b))} ml/kg/min over the year.`,quirk:Q(q)})},
+ {id:'rhr',facts:'rhr',show:M=>M.hasRhr&&M.rhrDrop>=2,numbered:1,build:(M,q)=>({title:'Heart',viz:GFX.ecg(M),big:cnt(M.rhrDrop,{pre:'−'}).text,count:cnt(M.rhrDrop,{pre:'−'}),bigCls:'m',unit:'resting bpm',head:'A calmer heart.',body:`Resting heart rate went from ${B(Math.round(M.rhra))} to ${B(Math.round(M.rhrb))} bpm.`,quirk:Q(q)})},
+ {id:'sleep',facts:'sleep',show:M=>M.hasSleep&&M.sleepMin>=8,numbered:1,build:(M,q)=>({title:'Recovery',viz:GFX.sleep(M),big:cnt(M.sleepMin,{pre:'+'}).text,count:cnt(M.sleepMin,{pre:'+'}),bigCls:'m',unit:'min of sleep a night',head:'Training and sleeping. Both.',body:`You now sleep about ${B(f1(M.sleepB)+' hours')} a night, up from ${f1(M.sleepA)}.`,quirk:Q(q)})},
+ {id:'steps',facts:'steps',show:M=>M.hasSteps,numbered:1,build:(M,q)=>({title:'Everyday steps',viz:GFX.feet(),big:cnt(M.steps/1e6,{dec:1,suf:'M'}).text,count:cnt(M.steps/1e6,{dec:1,suf:'M'}),bigCls:'m',unit:'steps',head:`${nf.format(M.stepsAvg)} a day.`,body:`Your best day hit ${B(nf.format(M.stepsBest.v))} steps on ${fd(T0+M.stepsBest.i*DAY)}.`,quirk:Q(q)})},
+ {id:'rhythm',facts:'rhythm',show:M=>true,numbered:1,build:(M,q)=>({title:'Your rhythm',viz:GFX.heat(M),big:DAYN[M.topDow].toUpperCase(),bigCls:'s',unit:`${pad(M.topHour)}:00`,head:'Your standing appointment.',body:'More of your training minutes land here than in any other hour of the week.',quirk:Q(q)})},
+ {id:'persona',show:M=>true,numbered:1,build:(M,q,ctx)=>({title:'Your 2026 type',viz:GFX.badge(),big:ctx.type.t.replace('The ','').toUpperCase(),bigCls:'xs',head:ctx.type.t,body:`${ctx.type.why(M)} Runner-up: ${B(ctx.types[1].t.replace('The ',''))}.`})},
+ {id:'next',show:M=>true,numbered:1,build:(M,q,ctx)=>({title:'2027 loading',viz:GFX.year(),big:cnt(M.projKm).text,count:cnt(M.projKm),bigCls:'m',unit:'km by 31 Dec',head:'The year is not done yet.',extra:`<ul class="list">${ctx.goals.map((g,i)=>`<li><span>${i+1}</span><span>${g.text(M)}</span></li>`).join('')}</ul>`})},
+ {id:'summary',show:M=>true,build:(M,q)=>{
+   const it=[[nf.format(M.distKm),'km moved'],[M.activeDays,'active days'],[nf.format(M.hrs),'hours moving']];
+   if(M.hasVo2&&M.vo2gain>.5)it.push([f1(M.vo2b),`VO₂ max, up ${f1(M.vo2gain)}`]);
+   if(M.hasRhr&&M.rhrDrop>=2)it.push([Math.round(M.rhrb),`resting bpm, down ${Math.round(M.rhrDrop)}`]);
+   if(M.hasSteps)it.push([nf.format(M.stepsAvg),'steps a day']);
+   if(M.hasRuns&&M.gain>=5)it.push([pace(M.pace1),`pace now, from ${pace(M.pace0)}`]);
+   it.push([M.streak,'day best streak'],[nf.format(M.elev),'metres climbed']);
+   return {title:'Your 2026 in motion',head:'Look what you did.',confetti:true,extra:`<div class="grid6">${it.slice(0,6).map(x=>`<div><div class="n">${x[0]}</div><div class="l">${x[1]}</div></div>`).join('')}</div>`,body:'Strong. Healthy. Moving. See you in 2027.'}}}
+];
+/* distance viz needs the ratio of the picked route; patch after the build */
+let LAST={};
+function buildDeck(M,over){
+  const used=new Set(), out=[]; let num=0; LAST={};
+  const types=TYPES.map(t=>({...t,sc:t.s(M)})).sort((a,b)=>b.sc-a.sc);
+  const goals=[];const gUsed=new Set();
+  GOALS.map(g=>({...g,pv:g.p(M)})).filter(g=>g.pv>0).sort((a,b)=>b.pv-a.pv).forEach(g=>{if(goals.length<3&&!gUsed.has(g.theme)){goals.push(g);gUsed.add(g.theme)}});
+  const ctx={type:types[0],types,goals};
+  LAST.types=types;LAST.goals=GOALS.map(g=>({id:g.id,theme:g.theme,rule:g.rule,pv:g.p(M),text:g.text}));LAST.picked=goals.map(g=>g.id);
+  SLOTS.forEach(sl=>{
+    let ev=null,q='';
+    if(sl.facts){ev=evalSlot(sl.facts,M,used,over[sl.facts]);LAST[sl.facts]={ev,shown:sl.show(M)}}
+    if(!sl.show(M))return;
+    if(ev&&ev.best){used.add(ev.best.f.theme);q=ev.best.f.text(ev.best.r,M)}
+    const spec=sl.build(M,q,ctx); spec.slot=sl.id; spec.num=sl.numbered?++num:0;
+    if(sl.id==='distance'){const r=ev&&ev.best&&ev.best.f.kind==='x'?ev.best.r:M.distKm/42.195;spec.viz=GFX.route(r)}
+    out.push(spec);
+  });
+  return out;
+}
+/* ================= importer: Strava archive + Apple Health export, read in the browser, nothing uploaded ================= */
+const NUM=s=>{const v=parseFloat(String(s==null?'':s).replace(',','.'));return isFinite(v)?v:NaN};
+const MONI={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+/* ---- zip reader (stored and deflate, with zip64) ---- */
+async function zipEntries(file){
+  const size=file.size, tl=Math.min(size,66000);
+  const tail=new DataView(await file.slice(size-tl,size).arrayBuffer());
+  let e=-1; for(let i=tl-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error('This does not look like a zip file.');
+  let cnt=tail.getUint16(e+10,true), cdSize=tail.getUint32(e+12,true), cdOff=tail.getUint32(e+16,true);
+  if(cdOff===0xFFFFFFFF||cnt===0xFFFF||cdSize===0xFFFFFFFF){
+    const loc=e-20; if(loc<0||tail.getUint32(loc,true)!==0x07064b50)throw new Error('Unsupported zip layout.');
+    const zo=Number(tail.getBigUint64(loc+8,true)); const z=new DataView(await file.slice(zo,zo+56).arrayBuffer());
+    cnt=Number(z.getBigUint64(32,true)); cdSize=Number(z.getBigUint64(40,true)); cdOff=Number(z.getBigUint64(48,true));
+  }
+  const cd=new DataView(await file.slice(cdOff,cdOff+cdSize).arrayBuffer()), dec=new TextDecoder(), out=[]; let p=0;
+  for(let k=0;k<cnt&&p+46<=cd.byteLength;k++){
+    if(cd.getUint32(p,true)!==0x02014b50)break;
+    const method=cd.getUint16(p+10,true); let csize=cd.getUint32(p+20,true), usize=cd.getUint32(p+24,true);
+    const nl=cd.getUint16(p+28,true), el=cd.getUint16(p+30,true), cl=cd.getUint16(p+32,true); let off=cd.getUint32(p+42,true);
+    const name=dec.decode(new Uint8Array(cd.buffer,cd.byteOffset+p+46,nl));
+    let q=p+46+nl; const end=q+el;
+    while(q+4<=end){const id=cd.getUint16(q,true),len=cd.getUint16(q+2,true);
+      if(id===1){let r=q+4;if(usize===0xFFFFFFFF){usize=Number(cd.getBigUint64(r,true));r+=8}if(csize===0xFFFFFFFF){csize=Number(cd.getBigUint64(r,true));r+=8}if(off===0xFFFFFFFF){off=Number(cd.getBigUint64(r,true));r+=8}}
+      q+=4+len}
+    out.push({name,method,csize,usize,off}); p+=46+nl+el+cl;
+  }
+  return out;
+}
+async function entryStream(file,en){
+  const lh=new DataView(await file.slice(en.off,en.off+30).arrayBuffer());
+  if(lh.getUint32(0,true)!==0x04034b50)throw new Error('Broken zip entry.');
+  const start=en.off+30+lh.getUint16(26,true)+lh.getUint16(28,true);
+  const raw=file.slice(start,start+en.csize).stream();
+  if(en.method===0)return raw;
+  if(en.method===8)return raw.pipeThrough(new DecompressionStream('deflate-raw'));
+  throw new Error('Unsupported zip compression.');
+}
+/* returns a stream for the wanted file, whether the user dropped the zip or the file itself */
+async function openSource(file,rx){
+  if(/\.zip$/i.test(file.name)){
+    const en=(await zipEntries(file)).find(x=>rx.test(x.name)&&!x.name.endsWith('/'));
+    if(!en)throw new Error('Could not find the right file inside the zip.');
+    return {stream:await entryStream(file,en),size:en.usize||file.size};
+  }
+  return {stream:file.stream(),size:file.size};
+}
+
+/* ---- CSV ---- */
+function parseCSV(t){
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true; else if(c===','){row.push(f);f=''}
+    else if(c==='\n'){row.push(f);rows.push(row);row=[];f=''} else if(c!=='\r')f+=c}
+  if(f!==''||row.length){row.push(f);rows.push(row)}
+  return rows;
+}
+function parseStravaDate(s){
+  s=String(s).trim(); const m=s.match(/^([A-Za-z]{3})[a-z]* (\d{1,2}), (\d{4}),? (\d{1,2}):(\d{2}):(\d{2}) ?(AM|PM)$/i);
+  if(m){let h=+m[4]%12;if(/pm/i.test(m[7]))h+=12;return Date.UTC(+m[3],MONI[m[1].toLowerCase()],+m[2],h,+m[5],+m[6])}
+  const t=Date.parse(s.replace(' ','T')+'Z'); return isFinite(t)?t:null;
+}
+const TYPEMAP=[[/run/i,'Run'],[/ride|cycl|bike/i,'Ride'],[/^walk/i,'Walk'],[/hike/i,'Hike'],[/weight|crossfit|strength/i,'Strength']];
+const mapType=t=>{t=String(t).trim();for(const [r,n] of TYPEMAP)if(r.test(t))return n;return t||'Other'};
+
+function stravaActs(text){
+  const rows=parseCSV(text); if(rows.length<2)throw new Error('The Strava file has no activities.');
+  const H=rows[0].map(h=>h.trim()), last=n=>H.lastIndexOf(n), first=n=>H.indexOf(n);
+  const c={date:last('Activity Date'),type:last('Activity Type'),dist:last('Distance'),dist0:first('Distance'),mov:last('Moving Time'),ela:last('Elapsed Time'),elev:last('Elevation Gain'),hr:last('Average Heart Rate'),cad:last('Average Cadence')};
+  if(c.date<0||c.type<0)throw new Error('Could not find the Strava columns. The export must use English headers (Activity Date, Activity Type).');
+  const acts=[]; let seen=0;
+  for(let r=1;r<rows.length;r++){
+    const R=rows[r]; if(R.length<=c.type)continue;
+    const ms=parseStravaDate(R[c.date]); if(ms===null)continue;
+    const d=new Date(ms); if(d.getFullYear()!==2026)continue; seen++;
+    const dateMs=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()), type=mapType(R[c.type]);
+    let km=c.dist>=0?NUM(R[c.dist]):NaN;
+    if(isFinite(km)){ if(c.dist!==c.dist0||km>1000)km=km/1000 } else km=0;
+    let sec=NUM(R[c.mov]); if(!isFinite(sec)||sec<=0)sec=NUM(R[c.ela]); if(!isFinite(sec)||sec<=0)continue;
+    if(type==='Run'&&km<.5)continue;
+    const a={type,i:Math.round((dateMs-T0)/DAY),date:dateMs,dow:d.getDay(),hour:d.getHours(),km,sec,elev:isFinite(NUM(R[c.elev]))?NUM(R[c.elev]):0};
+    if(type==='Run')a.pace=sec/km;
+    const hr=NUM(R[c.hr]); if(hr>40&&hr<230)a.hr=Math.round(hr);
+    let cad=NUM(R[c.cad]); if(cad>0){if(type==='Run'&&cad<120)cad*=2;if(type==='Run'||!isFinite(a.cad))a.cad=Math.round(cad)}
+    acts.push(a);
+  }
+  if(!acts.length)throw new Error(seen?'No usable 2026 activities found.':'No 2026 activities found in this file.');
+  return acts;
+}
+async function readStravaFile(file){
+  const {stream}=await openSource(file,/(^|\/)activities\.csv$/i);
+  return stravaActs(await new Response(stream).text());
+}
+
+/* ---- Apple Health (streamed, so a multi gigabyte export.xml is fine) ---- */
+const attr=(line,name)=>{const k=line.indexOf(' '+name+'="');if(k<0)return null;const s=k+name.length+3;return line.slice(s,line.indexOf('"',s))};
+const dayIdx=s=>(Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))-T0)/DAY;
+const tsMs=s=>{const m=s.match(/^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) ([+-])(\d\d)(\d\d)$/);if(!m)return NaN;return Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6])-(m[7]==='-'?-1:1)*(+m[8]*60+ +m[9])*60000};
+async function parseHealth(stream,size,onProgress){
+  const rd=stream.getReader(), dec=new TextDecoder(); let buf='',read=0;
+  const vo2={},rhr={},steps={},sleep={},cnt={vo2:0,rhr:0,steps:0,sleep:0};
+  const bump=(o,k,v)=>{(o[k]=o[k]||{s:0,n:0});o[k].s+=v;o[k].n++};
+  const nest=(o,src,d,v)=>{((o[src]=o[src]||{})[d]=(o[src][d]||0)+v)};
+  const handle=line=>{
+    if(line.indexOf('<Record ')<0)return;
+    const t=attr(line,'type'); if(!t)return;
+    let kind=t==='HKQuantityTypeIdentifierVO2Max'?'vo2':t==='HKQuantityTypeIdentifierRestingHeartRate'?'rhr':t==='HKQuantityTypeIdentifierStepCount'?'steps':t==='HKCategoryTypeIdentifierSleepAnalysis'?'sleep':null;
+    if(!kind)return;
+    const st=attr(line,'startDate'),en=attr(line,'endDate'); if(!st||!en)return;
+    if(kind==='sleep'){
+      if(en.slice(0,4)!=='2026')return; const v=attr(line,'value'); if(!v||v.indexOf('Asleep')<0)return;
+      const a=tsMs(st),b=tsMs(en); if(!isFinite(a)||!isFinite(b)||b<=a)return;
+      nest(sleep,attr(line,'sourceName')||'x',dayIdx(en),(b-a)/3600000); cnt.sleep++; return;
+    }
+    if(st.slice(0,4)!=='2026')return;
+    const v=parseFloat(attr(line,'value')); if(!isFinite(v))return; const d=dayIdx(st);
+    if(kind==='vo2'){bump(vo2,Math.floor(d/7)*7,v);cnt.vo2++}
+    else if(kind==='rhr'){bump(rhr,Math.floor(d/7)*7,v);cnt.rhr++}
+    else {nest(steps,attr(line,'sourceName')||'x',d,v);cnt.steps++}
+  };
+  for(;;){
+    const {done,value}=await rd.read(); if(done)break;
+    read+=value.length; buf+=dec.decode(value,{stream:true});
+    let p,s=0; while((p=buf.indexOf('\n',s))>=0){handle(buf.slice(s,p));s=p+1} buf=buf.slice(s);
+    if(onProgress)onProgress(Math.min(1,read/(size||read)));
+  }
+  if(buf)handle(buf);
+  const weekly=o=>Object.keys(o).map(Number).sort((a,b)=>a-b).map(i=>({i,v:o[i].s/o[i].n}));
+  /* overlapping devices would double count, so for steps and sleep take the busiest source per day */
+  const perDay=src=>{const m={};Object.values(src).forEach(days=>Object.entries(days).forEach(([d,v])=>{m[d]=Math.max(m[d]||0,v)}));return m};
+  const stepDay=perDay(steps), sleepDay=perDay(sleep), sw={};
+  Object.entries(sleepDay).forEach(([d,h])=>{if(h>=3&&h<=14){const w=Math.floor(d/7)*7;(sw[w]=sw[w]||{s:0,n:0});sw[w].s+=h;sw[w].n++}});
+  return {vo2:weekly(vo2),rhr:weekly(rhr),sleep:weekly(sw),steps:stepDay,counts:cnt};
+}
+async function readHealthFile(file,onProgress){
+  const {stream,size}=await openSource(file,/(^|\/)export\.xml$/i);
+  return parseHealth(stream,size,onProgress);
+}
+
+/* ---- put it together as a profile the deck engine understands ---- */
+function buildReal(acts,health){
+  const end=Math.min(Date.now(),Date.UTC(2026,11,31)), n=Math.max(60,Math.round((end-T0)/DAY)+1);
+  setN(n);
+  const A=acts.filter(a=>a.i>=0&&a.i<n), daySteps=new Array(n).fill(0);
+  if(health)Object.entries(health.steps||{}).forEach(([d,v])=>{if(+d>=0&&+d<n)daySteps[+d]=Math.round(v)});
+  const cut=a=>(a||[]).filter(p=>p.i>=0&&p.i<n);
+  return {id:'mine',name:'Your data',real:true,N:n,Y:{acts:A,daySteps,vo2:cut(health&&health.vo2),rhr:cut(health&&health.rhr),sleep:cut(health&&health.sleep)}};
+}
+/* ================= more sources: Garmin, Polar, Whoop, Google Fit, FIT/GPX/TCX (Coros, Suunto, others) =================
+   Everything here is read in the browser. Formats come from each service's own export. */
+const numc=s=>{s=String(s==null?'':s).trim().replace(/^--$/,'');if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');const v=parseFloat(s.replace(',','.'));return isFinite(v)?v:NaN};
+const hmsSec=s=>{s=String(s||'').trim();if(!/^\d+(:\d+){1,2}(\.\d+)?$/.test(s))return NaN;return s.split(':').reduce((a,x)=>a*60+parseFloat(x),0)};
+const isoDur=s=>{const m=String(s||'').match(/^PT(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?$/);return m?(+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0):NaN};
+/* "2026-03-04 07:30:00" (already local) or a timestamp with Z/offset (converted to this computer's local time) */
+function localParts(s){
+  s=String(s||'').trim(); const m=s.match(/^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)/); if(!m)return null;
+  if(/(Z|[+-]\d\d:?\d\d)$/.test(s)){const d=new Date(s);return isFinite(d)?{y:d.getFullYear(),m:d.getMonth(),d:d.getDate(),h:d.getHours()}:null}
+  return {y:+m[1],m:+m[2]-1,d:+m[3],h:+m[4]};
+}
+const partsFromMs=ms=>{const d=new Date(ms);return {y:d.getFullYear(),m:d.getMonth(),d:d.getDate(),h:d.getHours()}};
+function mkAct(type,p,km,sec,elev,hr,cad){
+  if(!p||p.y!==2026||!(sec>0))return null; km=isFinite(km)&&km>0?km:0; if(type==='Run'&&km<.5)return null;
+  const dateMs=Date.UTC(p.y,p.m,p.d);
+  const a={type,i:Math.round((dateMs-T0)/DAY),date:dateMs,dow:new Date(dateMs).getUTCDay(),hour:p.h,km,sec,elev:elev>0&&elev<20000?elev:0};
+  if(type==='Run'&&km>0)a.pace=sec/km;
+  if(hr>40&&hr<230)a.hr=Math.round(hr);
+  if(cad>0){if(type==='Run'&&cad<120)cad*=2;a.cad=Math.round(cad)}
+  return a;
+}
+const colOf=H=>(...rx)=>H.findIndex(h=>rx.some(x=>x.test(h.trim())));
+function weeklyMean(map){const w={};Object.entries(map).forEach(([d,v])=>{d=+d;if(!isFinite(v))return;const k=Math.floor(d/7)*7;(w[k]=w[k]||{s:0,n:0});w[k].s+=v;w[k].n++});return Object.keys(w).map(Number).sort((a,b)=>a-b).map(i=>({i,v:w[i].s/w[i].n}))}
+
+/* ---- Garmin Connect CSV (Activities.csv) ---- */
+function garminCSV(text){
+  const rows=parseCSV(text), H=rows[0].map(h=>h.trim()), c=colOf(H);
+  const k={date:c(/^date$/i),type:c(/^activity type$/i),dist:c(/^distance$/i),time:c(/^time$/i),mov:c(/^moving time$/i),hr:c(/^avg hr$/i),cad:c(/^avg (run )?cadence$/i),asc:c(/^total ascent$/i)};
+  if(k.date<0||k.type<0||k.dist<0)throw new Error('This Garmin CSV has unexpected columns.');
+  const out=[]; for(let r=1;r<rows.length;r++){const R=rows[r]; if(R.length<=k.type)continue;
+    let sec=k.mov>=0?hmsSec(R[k.mov]):NaN; if(!(sec>0))sec=hmsSec(R[k.time]);
+    const a=mkAct(mapType(R[k.type]),localParts(R[k.date]),numc(R[k.dist]),sec,k.asc>=0?numc(R[k.asc]):0,k.hr>=0?numc(R[k.hr]):NaN,k.cad>=0?numc(R[k.cad]):NaN); if(a)out.push(a)}
+  return out;
+}
+/* ---- Garmin full account export (DI_CONNECT ... summarizedActivities.json) ---- */
+function garminJSON(text){
+  const j=JSON.parse(text), list=[]; (Array.isArray(j)?j:[j]).forEach(x=>{(x.summarizedActivitiesExport||[x]).forEach(a=>list.push(a))});
+  const out=[];
+  list.forEach(a=>{
+    if(!a||!a.startTimeLocal||!a.duration)return;
+    const type=mapType(a.activityType&&a.activityType.typeKey||a.activityType||''), p=(d=>({y:d.getUTCFullYear(),m:d.getUTCMonth(),d:d.getUTCDate(),h:d.getUTCHours()}))(new Date(a.startTimeLocal));
+    /* Garmin's units vary between export versions: try centimetres and milliseconds first, then metres and seconds */
+    let km=(a.distance||0)/100000, sec=a.duration/1000, el=(a.elevationGain||0)/100;
+    if(type==='Run'&&km>0&&(sec/km<150||sec/km>1500)){km=(a.distance||0)/1000;sec=a.duration;el=a.elevationGain||0}
+    else if(type==='Run'&&km===0&&a.distance){km=a.distance/1000}
+    const x=mkAct(type,p,km,sec,el,a.avgHr,a.avgRunCadence||a.avgBikeCadence); if(x)out.push(x);
+  });
+  return out;
+}
+/* ---- Polar Flow (training-session-*.json) ---- */
+function polarJSON(text){
+  const j=JSON.parse(text), ex=j.exercises||(j.startTime?[j]:[]), out=[];
+  ex.forEach(e=>{
+    const sec=isoDur(e.duration)||(typeof e.duration==='number'?e.duration/1000:NaN);
+    const a=mkAct(mapType(e.sport||''),localParts(e.startTime||j.startTime),(e.distance||0)/1000,sec,e.ascent,e.heartRate&&e.heartRate.avg,NaN); if(a)out.push(a)});
+  return out;
+}
+/* ---- Whoop (physiological_cycles.csv, sleeps.csv, workouts.csv) ---- */
+function whoopCycles(text){
+  const rows=parseCSV(text), c=colOf(rows[0]), cs=c(/cycle start/i), rh=c(/resting heart/i), as=c(/asleep duration/i);
+  if(cs<0)throw new Error('Unexpected Whoop cycles file.');
+  const rhr={},sl={}; for(let r=1;r<rows.length;r++){const R=rows[r]; const s=(R[cs]||'').slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(s)||s.slice(0,4)!=='2026')continue; const d=dayIdx(s);
+    const v=rh>=0?numc(R[rh]):NaN; if(v>30&&v<120)rhr[d]=v; const m=as>=0?numc(R[as]):NaN; if(m>180&&m<840)sl[d]=m/60}
+  return {rhr:weeklyMean(rhr),sleep:weeklyMean(sl)};
+}
+function whoopSleeps(text){
+  const rows=parseCSV(text), c=colOf(rows[0]), wk=c(/wake onset/i), as=c(/asleep duration/i), nap=c(/^nap$/i), sl={};
+  if(wk<0||as<0)throw new Error('Unexpected Whoop sleeps file.');
+  for(let r=1;r<rows.length;r++){const R=rows[r]; if(nap>=0&&/true/i.test(R[nap]))continue; const s=(R[wk]||'').slice(0,10); if(!/^\d{4}-\d\d-\d\d$/.test(s)||s.slice(0,4)!=='2026')continue; const m=numc(R[as]); if(m>0)sl[dayIdx(s)]=(sl[dayIdx(s)]||0)+m/60}
+  return {sleep:weeklyMean(sl)};
+}
+function whoopWorkouts(text){
+  const rows=parseCSV(text), c=colOf(rows[0]), st=c(/workout start/i), du=c(/^duration/i), ac=c(/activity name/i), di=c(/distance \(m/i), hr=c(/average hr/i), al=c(/altitude gain/i), out=[];
+  if(st<0||du<0)throw new Error('Unexpected Whoop workouts file.');
+  for(let r=1;r<rows.length;r++){const R=rows[r]; const a=mkAct(mapType(R[ac]),localParts(R[st]),di>=0?numc(R[di])/1000:0,numc(R[du])*60,al>=0?numc(R[al]):0,hr>=0?numc(R[hr]):NaN,NaN); if(a)out.push(a)}
+  return out;
+}
+/* ---- Google Fit via Takeout (Fit/Daily activity metrics/*.csv) ---- */
+function gfitDaily(text,name){
+  const rows=parseCSV(text), c=colOf(rows[0]), st=c(/step count/i), dt=c(/^date$/i), steps={};
+  if(st<0)return steps;
+  const fromName=(name.match(/(\d{4}-\d\d-\d\d)/)||[])[1];
+  for(let r=1;r<rows.length;r++){const R=rows[r]; const s=dt>=0?R[dt]:fromName; if(!s||s.slice(0,4)!=='2026')continue; const v=numc(R[st]); if(v>0)steps[dayIdx(s.slice(0,10))]=(steps[dayIdx(s.slice(0,10))]||0)+v}
+  return steps;
+}
+/* ---- FIT (Garmin, Coros, Suunto, Wahoo ... the common binary workout format) ---- */
+const FITSPORT={1:'Run',2:'Ride',4:'Strength',5:'Swim',10:'Strength',11:'Walk',17:'Hike'};
+function fitSessions(buf){
+  const dv=new DataView(buf), u8=new Uint8Array(buf); if(buf.byteLength<16||String.fromCharCode(u8[8],u8[9],u8[10],u8[11])!=='.FIT')return [];
+  const hs=u8[0], ds=dv.getUint32(4,true), end=Math.min(buf.byteLength-2,hs+ds), defs={}, out=[]; let p=hs;
+  const rd=(q,sz,bt,le)=>{const t=bt&31;if(sz===1){const v=u8[q];return v===255?NaN:v}if(sz===2){const v=dv.getUint16(q,le);return v===65535?NaN:v}if(sz===4){const v=dv.getUint32(q,le);return v===4294967295?NaN:v}return NaN};
+  while(p<end){
+    const h=u8[p++];
+    if(h&0x80){const d=defs[(h>>5)&3]; if(!d)break; p+=d.size; continue}
+    const l=h&15;
+    if(h&0x40){p++; const le=u8[p++]===0, g=dv.getUint16(p,le); p+=2; const n=u8[p++], f=[]; let size=0;
+      for(let k=0;k<n;k++){f.push({num:u8[p],size:u8[p+1],bt:u8[p+2]});size+=u8[p+1];p+=3}
+      if(h&0x20){const nd=u8[p++];for(let k=0;k<nd;k++){size+=u8[p+1];p+=3}}
+      defs[l]={g,le,f,size};
+    }else{const d=defs[l]; if(!d)break;
+      if(d.g===18){let q=p;const r={};for(const fd of d.f){r[fd.num]=rd(q,fd.size,fd.bt,d.le);q+=fd.size}out.push(r)}
+      p+=d.size}
+  }
+  return out;
+}
+function fitActs(buf){
+  const out=[]; fitSessions(buf).forEach(r=>{
+    const t=r[2]; if(!(t>0))return; const ms=(631065600+t)*1000, type=FITSPORT[r[5]]||'Other';
+    const sec=(isFinite(r[8])?r[8]:r[7])/1000, a=mkAct(type,partsFromMs(ms),(r[9]||0)/100000,sec,r[22],r[16],r[18]); if(a)out.push(a)});
+  return out;
+}
+/* ---- GPX and TCX ---- */
+const hav=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180,dl=t(c-a),dn=t(d-b),q=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(q))};
+const gain=el=>{let g=0;for(let i=1;i<el.length;i++)if(el[i]>el[i-1])g+=el[i]-el[i-1];return g};
+function gpxActs(text){
+  const type=mapType((text.match(/<type>([^<]*)<\/type>/)||[])[1]||'Other'), pts=[]; let m; const re=/<trkpt\b([^>]*)>([\s\S]*?)<\/trkpt>/g;
+  while((m=re.exec(text))){const la=+(m[1].match(/lat="([-\d.]+)"/)||[])[1], lo=+(m[1].match(/lon="([-\d.]+)"/)||[])[1];
+    const t=(m[2].match(/<time>([^<]*)<\/time>/)||[])[1], e=(m[2].match(/<ele>([-\d.]+)<\/ele>/)||[])[1], h=(m[2].match(/<(?:\w+:)?hr>(\d+)</)||[])[1];
+    if(isFinite(la)&&isFinite(lo)&&t)pts.push({la,lo,t:Date.parse(t),e:e!=null?+e:NaN,h:h!=null?+h:NaN})}
+  if(pts.length<2)return [];
+  let km=0; for(let i=1;i<pts.length;i++)km+=hav(pts[i-1].la,pts[i-1].lo,pts[i].la,pts[i].lo);
+  const hr=pts.map(x=>x.h).filter(isFinite), a=mkAct(type,partsFromMs(pts[0].t),km,(pts[pts.length-1].t-pts[0].t)/1000,gain(pts.map(x=>x.e).filter(isFinite)),hr.length?hr.reduce((s,v)=>s+v,0)/hr.length:NaN,NaN);
+  return a?[a]:[];
+}
+function tcxActs(text){
+  const out=[], re=/<Activity\b[^>]*Sport="([^"]*)"[^>]*>([\s\S]*?)<\/Activity>/g; let m;
+  while((m=re.exec(text))){
+    const body=m[2], laps=[...body.matchAll(/<Lap\b[^>]*StartTime="([^"]*)"[^>]*>([\s\S]*?)<\/Lap>/g)]; if(!laps.length)continue;
+    let sec=0,dist=0,hs=0,hw=0; laps.forEach(L=>{const t=+(L[2].match(/<TotalTimeSeconds>([\d.]+)</)||[])[1]||0,d=+(L[2].match(/<DistanceMeters>([\d.]+)</)||[])[1]||0,h=+(L[2].match(/<AverageHeartRateBpm[^>]*>\s*<Value>(\d+)</)||[])[1]||0;sec+=t;dist+=d;if(h){hs+=h*t;hw+=t}});
+    const el=[...body.matchAll(/<AltitudeMeters>([-\d.]+)</g)].map(x=>+x[1]), cd=[...body.matchAll(/<Cadence>(\d+)</g)].map(x=>+x[1]).filter(v=>v>0);
+    const a=mkAct(mapType(m[1]),localParts(laps[0][1]),dist/1000,sec,gain(el),hw?hs/hw:NaN,cd.length?cd.reduce((s,v)=>s+v,0)/cd.length:NaN); if(a)out.push(a);
+  }
+  return out;
+}
+
+/* ---- recognise files by name, whether loose or inside a zip ---- */
+function classify(name){
+  const n=name.replace(/\\/g,'/'), b=n.split('/').pop();
+  if(/(^|\/)export\.xml$/i.test(n))return 'apple';
+  if(/summarizedActivities.*\.json$/i.test(b))return 'garminjson';
+  if(/^training-session.*\.json$/i.test(b))return 'polar';
+  if(/^physiological_cycles\.csv$/i.test(b))return 'whoopcycles';
+  if(/^sleeps\.csv$/i.test(b))return 'whoopsleeps';
+  if(/^workouts\.csv$/i.test(b))return 'whoopworkouts';
+  if(/daily (activity )?(metrics|summar)/i.test(n)&&/\.csv$/i.test(b))return 'gfitdaily';
+  if(/\.fit$/i.test(b))return 'fit'; if(/\.gpx$/i.test(b))return 'gpx'; if(/\.tcx$/i.test(b))return 'tcx';
+  if(/^activities.*\.csv$/i.test(b))return 'activitiescsv';
+  return null;
+}
+const LABEL={apple:'Apple Health',garminjson:'Garmin',polar:'Polar',whoopcycles:'Whoop',whoopsleeps:'Whoop',whoopworkouts:'Whoop',gfitdaily:'Google Fit',fit:'FIT files',gpx:'GPX files',tcx:'TCX files',activitiescsv:'activities CSV'};
+async function collect(files){
+  const items=[];
+  for(const f of files){
+    if(/\.zip$/i.test(f.name)){
+      for(const en of await zipEntries(f)){ if(en.name.endsWith('/'))continue; const kind=classify(en.name); if(kind)items.push({kind,name:en.name,size:en.usize,stream:()=>entryStream(f,en)}) }
+    }else{const kind=classify(f.name); if(kind)items.push({kind,name:f.name,size:f.size,stream:async()=>f.stream()}); else items.push({kind:null,name:f.name})}
+  }
+  return items;
+}
+function dedupe(acts){
+  acts.sort((a,b)=>a.i-b.i||a.hour-b.hour); const out=[];
+  acts.forEach(a=>{const dup=out.some(b=>b.i===a.i&&b.type===a.type&&Math.abs(b.hour-a.hour)<=1&&Math.abs(b.sec-a.sec)<Math.max(120,a.sec*.1));if(!dup)out.push(a)});
+  return out;
+}
+/* the entry point: any mix of files in, activities and health series out */
+async function ingest(files,onStatus,onProgress){
+  const items=await collect(files), acts=[], H={vo2:[],rhr:[],sleep:[],steps:{}}, seen={}, errs=[], skipped=[];
+  const note=(k,n)=>{const l=LABEL[k];seen[l]=(seen[l]||0)+n};
+  const take=p=>{['vo2','rhr','sleep'].forEach(k=>{if(p[k]&&p[k].length&&!H[k].length)H[k]=p[k]});if(p.steps)Object.entries(p.steps).forEach(([d,v])=>{H.steps[d]=Math.max(H.steps[d]||0,v)})};
+  const text=async it=>new Response(await it.stream()).text();
+  const buf=async it=>new Response(await it.stream()).arrayBuffer();
+  let sleepAlt=[], done=0;
+  for(const it of items){
+    if(!it.kind){skipped.push(it.name);continue}
+    if(onStatus&&(done++%25===0||it.kind==='apple'))onStatus('Reading '+LABEL[it.kind]+'...');
+    try{
+      let a=null;
+      switch(it.kind){
+        case 'apple':{const p=await parseHealth(await it.stream(),it.size,onProgress);take(p);note('apple',p.counts.vo2+p.counts.rhr+p.counts.steps+p.counts.sleep);break}
+        case 'activitiescsv':{const t=await text(it);a=/Activity Date/.test(t.slice(0,3000))?stravaActs(t):garminCSV(t);if(a.length&&/Activity Date/.test(t.slice(0,3000)))seen['Strava']=(seen['Strava']||0)+a.length;else if(a.length)seen['Garmin']=(seen['Garmin']||0)+a.length;a=a.length?a:null;if(a)acts.push(...a);a=null;break}
+        case 'garminjson':a=garminJSON(await text(it));break;
+        case 'polar':a=polarJSON(await text(it));break;
+        case 'whoopcycles':take(whoopCycles(await text(it)));note('whoopcycles',1);break;
+        case 'whoopsleeps':{const p=whoopSleeps(await text(it));if(p.sleep.length)sleepAlt=p.sleep;note('whoopsleeps',1);break}
+        case 'whoopworkouts':a=whoopWorkouts(await text(it));break;
+        case 'gfitdaily':take({steps:gfitDaily(await text(it),it.name)});note('gfitdaily',1);break;
+        case 'fit':a=fitActs(await buf(it));break;
+        case 'gpx':a=gpxActs(await text(it));break;
+        case 'tcx':a=tcxActs(await text(it));break;
+      }
+      if(a){acts.push(...a);note(it.kind,a.length)}
+    }catch(e){errs.push(it.name.split('/').pop()+': '+e.message)}
+  }
+  if(!H.sleep.length&&sleepAlt.length)H.sleep=sleepAlt;
+  const A=dedupe(acts);
+  if(!A.length&&!H.rhr.length&&!H.sleep.length&&!Object.keys(H.steps).length){
+    throw new Error(errs[0]||(skipped.length?'I did not recognise these files: '+skipped.slice(0,3).join(', ')+'. Drop the zip or CSV exactly as you downloaded it.':'No 2026 data found in these files.'));
+  }
+  if(A.length<3)throw new Error('I found '+(Object.keys(H.steps).length||H.rhr.length||H.sleep.length?'health data but ':'')+'only '+A.length+' workouts from 2026. Add your activity export too (Strava, Garmin, Polar, Whoop workouts or FIT/GPX/TCX files).');
+  return {acts:A,health:H,seen,errs,skipped:skipped.length,dups:acts.length-A.length};
+}
+/* ================= export cards as 1080x1920 PNGs (Instagram story size), drawn in the browser ================= */
+let FONTCSS=null;
+async function fontCSS(){
+  if(FONTCSS!==null)return FONTCSS;
+  let css=''; const ctl=new AbortController(), kill=setTimeout(()=>ctl.abort(),12000);
+  try{
+    const links=[...document.querySelectorAll('link[rel=stylesheet][href*="fonts.googleapis.com"]')];
+    for(const l of links){
+      let t=await (await fetch(l.href,{signal:ctl.signal})).text();
+      const urls=[...new Set([...t.matchAll(/url\((https:[^)]+)\)/g)].map(m=>m[1]))];
+      for(const u of urls){
+        const b=await (await fetch(u,{signal:ctl.signal})).blob();
+        const d=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+        t=t.split(u).join(d);
+      }
+      css+=t+'\n';
+    }
+  }catch(e){css=''}
+  clearTimeout(kill); return FONTCSS=css;
+}
+function pageCSS(){
+  let out='';
+  for(const s of document.styleSheets){try{for(const r of s.cssRules)out+=r.cssText+'\n'}catch(e){}}
+  return out;
+}
+async function cardToPNG(i,W=1080,H=1920){
+  const theme=[...document.body.classList].find(c=>/^t-/.test(c))||'t-bold';
+  const host=document.createElement('div');
+  host.className=theme;
+  host.style.cssText=`position:fixed;left:-99999px;top:0;width:${W}px;height:${H}px;display:flex;pointer-events:none`;
+  host.innerHTML=cardHTML(DECK[i],i,DECK.length);
+  document.body.appendChild(host);
+  const card=host.firstElementChild; card.classList.add('active');
+  try{
+    await (document.fonts&&document.fonts.ready);
+    fitBig(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const xml=new XMLSerializer().serializeToString(card);
+    const css=(await fontCSS())+pageCSS()+'*{animation:none!important;transition:none!important}';
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="${W}" height="${H}"><div xmlns="http://www.w3.org/1999/xhtml" class="${theme}" style="width:${W}px;height:${H}px;display:flex"><style>${css.replace(/</g,'&lt;')}</style>${xml}</div></foreignObject></svg>`;
+    const img=new Image(); img.decoding='sync';
+    await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('Could not draw this card as an image in this browser.'));img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H; cv.getContext('2d').drawImage(img,0,0,W,H);
+    return await new Promise((ok,no)=>cv.toBlob(b=>b?ok(b):no(new Error('Image export failed')),'image/png'));
+  }finally{host.remove();fitBig()}
+}
+/* tiny zip writer (stored, no compression) so "save all" is one file */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0};
+function makeZip(files){
+  const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  files.forEach(f=>{const nm=enc.encode(f.name),crc=crc32(f.data),h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,f.data.length,true);h.setUint32(22,f.data.length,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,f.data);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint32(16,crc,true);c.setUint32(20,f.data.length,true);c.setUint32(24,f.data.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cd.push(new Uint8Array(c.buffer),nm); off+=30+nm.length+f.data.length});
+  const cds=cd.reduce((s,x)=>s+x.length,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cds,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:'application/zip'});
+}
+function saveBlob(b,name){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},2000)}
+const pn=i=>`2026-recap-${String(i+1).padStart(2,'0')}.png`;
+async function saveCurrent(){
+  const b=await cardToPNG(idx), f=new File([b],pn(idx),{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({files:[f]});return}catch(e){if(e&&e.name==='AbortError')return}}
+  saveBlob(b,pn(idx));
+}
+async function saveAll(setMsg){
+  const files=[];
+  for(let i=0;i<DECK.length;i++){setMsg('Drawing card '+(i+1)+' of '+DECK.length+'...');files.push({name:pn(i),data:new Uint8Array(await (await cardToPNG(i)).arrayBuffer())})}
+  saveBlob(makeZip(files),'2026-recap-cards.zip'); setMsg('');
+}
+/* ================= render + navigation ================= */
+const $=id=>document.getElementById(id);
+const track=$('track'), stage=$('stage'), prog=$('prog'), catEl=$('cat');
+let P=PROFILES[0], M=null, DECK=[], over={}, idx=0, mode='cards';
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function cardHTML(o,i,n){
+  const attr=o.count?` data-n="${o.count.n}" data-dec="${o.count.dec}" data-pre="${o.count.pre}" data-suf="${o.count.suf}"`:'';
+  const kick=o.num?`${pad(o.num)} ${o.title}`:o.title;
+  return `<article class="card k${i%6+1}" data-i="${i}" aria-label="${o.title}"><div class="inner"><div class="kick">${kick}</div><div class="main">${o.viz||''}${o.big?`<div class="big ${o.bigCls||''}"${attr}>${o.big}</div>`:''}${o.unit?`<div class="unit">${o.unit}</div>`:''}${o.head?`<h2>${o.head}</h2>`:''}${o.body?`<p class="txt">${o.body}</p>`:''}${o.extra||''}${o.quirk||''}</div><div class="foot"><span>2026 IN MOTION</span><span>${pad(i+1)}/${pad(n)}</span></div>${o.confetti?'<div class="conf"></div>':''}</div></article>`;
+}
+function render(){
+  track.innerHTML=DECK.map((o,i)=>cardHTML(o,i,DECK.length)).join('');
+  prog.innerHTML=DECK.map(()=>'<i></i>').join('');
+  requestAnimationFrame(fitBig);
+}
+function fitBig(){
+  document.querySelectorAll('.big:not(.xs)').forEach(el=>{
+    const card=el.closest('.card'), cw=card.clientWidth/100; if(!cw)return;
+    el.style.fontSize=''; let guard=0;
+    while(el.scrollWidth>el.clientWidth+1&&guard<40){const px=parseFloat(getComputedStyle(el).fontSize);el.style.fontSize=(px*.94/cw).toFixed(2)+'cqw';guard++}
+  });
+}
+function countUp(card){
+  if(reduce)return;
+  card.querySelectorAll('[data-n]').forEach(el=>{
+    const n=+el.dataset.n,dec=+el.dataset.dec||0,pre=el.dataset.pre||'',suf=el.dataset.suf||'';let t0=null;
+    const fmt=v=>pre+(dec?v.toFixed(dec):nf.format(Math.round(v)))+suf;
+    const step=t=>{if(t0===null)t0=t;const k=Math.max(0,Math.min(1,(t-t0)/1100)),e=1-Math.pow(1-k,3);el.textContent=fmt(n*e);if(k<1&&card.classList.contains('active'))requestAnimationFrame(step);else el.textContent=fmt(n)};
+    requestAnimationFrame(step);
+  });
+}
+function confetti(card){
+  const box=card.querySelector('.conf'); if(!box||reduce)return; box.innerHTML='';
+  const cols=['var(--hi)','var(--fg)','#FFE68A','#FF5A3C','#AEB7FF','#7EE3D0'];
+  for(let k=0;k<54;k++){const i=document.createElement('i');i.style.left=(Math.random()*100)+'%';i.style.background=cols[k%cols.length];i.style.setProperty('--x',(Math.random()*30-15)+'cqw');i.style.setProperty('--r',(Math.random()*720-360)+'deg');i.style.setProperty('--t',(1.8+Math.random()*1.4)+'s');i.style.animationDelay=(Math.random()*.5)+'s';box.appendChild(i)}
+  setTimeout(()=>{box.innerHTML=''},4200);
+}
+function go(n){
+  idx=Math.max(0,Math.min(DECK.length-1,n));
+  track.style.transform=`translateX(${-idx*100}%)`;
+  [...prog.children].forEach((b,k)=>b.classList.toggle('on',k<=idx));
+  const cards=[...track.children];
+  cards.forEach(c=>c.classList.remove('active'));
+  const c=cards[idx]; if(!c)return;
+  void c.offsetWidth; c.classList.add('active');
+  stage.style.setProperty('--pfg',getComputedStyle(c).color);
+  countUp(c); confetti(c);
+}
+function setMode(m){
+  mode=m; document.body.classList.toggle('grid',m==='grid'); document.body.classList.toggle('cat-on',m==='cat');
+  $('btnCards').classList.toggle('on',m==='cards');$('btnGrid').classList.toggle('on',m==='grid');$('btnCat').classList.toggle('on',m==='cat');
+  if(m==='cards')go(idx); else [...track.children].forEach(c=>c.classList.remove('active'));
+  requestAnimationFrame(fitBig);
+}
+let sx=null;
+stage.addEventListener('pointerdown',e=>{sx=e.clientX});
+stage.addEventListener('pointerup',e=>{
+  if(sx===null)return; const dx=e.clientX-sx; sx=null;
+  if(mode==='grid'){const c=e.target.closest('.card');if(c){idx=+c.dataset.i;setMode('cards')}return}
+  if(Math.abs(dx)>40){go(idx+(dx<0?1:-1));return}
+  const r=stage.getBoundingClientRect(); go(e.clientX-r.left<r.width*.35?idx-1:idx+1);
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='SELECT'||mode==='cat')return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();go(idx+1)}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();go(idx-1)}
+  else if(e.key==='g'||e.key==='G')setMode(mode==='grid'?'cards':'grid');
+});
+$('btnCards').onclick=()=>setMode('cards');
+$('btnGrid').onclick=()=>setMode(mode==='grid'?'cards':'grid');
+$('btnCat').onclick=()=>setMode(mode==='cat'?'cards':'cat');
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(fitBig,120)});
+if(document.fonts){document.fonts.ready.then(()=>requestAnimationFrame(fitBig));document.fonts.addEventListener&&document.fonts.addEventListener('loadingdone',()=>requestAnimationFrame(fitBig))}
+
+/* ================= catalog view ================= */
+const strip=h=>h.replace(/<[^>]+>/g,'');
+const valTxt=row=>{if(!row.allowed)return 'n/a';const r=row.r;switch(row.f.kind){case 'x':return X(r)+'×';case 'n':return nf.format(r);case 'pct':return r.toFixed(1)+'%';case 'min':return Math.round(r)+'';default:return 'always'}};
+const whyNot=row=>{if(!row.allowed)return 'Not for this profile';const r=row.r,k=row.f.kind;if(k==='x')return r<.9?'Too small':'Too big';if(k==='n')return r<30?'Too small':'Too big';if(k==='pct')return r<3?'Under 3%':'Too big';if(k==='min')return r<3?'Too small':'Too big';return 'Skipped'};
+function renderCat(){
+  const slots=Object.keys(SLOT_INFO); let elig=0; slots.forEach(s=>{if(LAST[s])elig+=LAST[s].ev.rows.filter(r=>r.fit>0).length});
+  const themes=[['t-bold','Bold','Anybody, saturated colour blocks, ring pattern.'],['t-night','Night','Dela Gothic One on deep tones, one glowing accent each.'],['t-sun','Sunrise','Gloock serif on soft gradients.'],['t-receipt','Receipt','Azeret Mono on thermal paper, dashed rules.']];
+  let h=`<h1>Fact catalog</h1><p>Every card picks its comparison from this list. The picker only uses facts that are true and impressive for the person, so a cyclist, a hiker and a beginner each get different lines.</p>
+  <div class="stats"><span class="pill hot">${FACTS.length} facts</span><span class="pill">${TYPES.length} archetypes</span><span class="pill">${GOALS.length} goal ideas</span><span class="pill">${elig} eligible for ${P.name}</span><span class="pill">${DECK.length} cards in this deck</span></div>
+  <div class="how"><div><b>1 Fit</b><span>Each fact turns a number into a score. A multiple between 1.5× and 25× scores best. Anything under 0.9× is dropped.</span></div><div><b>2 Variety</b><span>If a theme is already in the deck, such as geography, a later fact from it loses 40%.</span></div><div><b>3 Personal jitter</b><span>A small stable offset per person breaks ties, so two similar people still get different lines.</span></div><div><b>4 Your override</b><span>Press Use on any eligible fact to lock it into the card. Press Auto to let the picker choose again.</span></div></div>`;
+  slots.forEach(s=>{
+    const L=LAST[s]; if(!L)return; const info=SLOT_INFO[s], pickedId=L.ev.best&&L.ev.best.f.id;
+    const rows=L.ev.rows.slice().sort((a,b)=>(b.f.id===pickedId)-(a.f.id===pickedId)||b.score-a.score||b.fit-a.fit);
+    const nOk=rows.filter(r=>r.fit>0).length;
+    h+=`<section class="slot"><header><h3>${info[0]}</h3><span>${rows.length} facts, ${nOk} eligible${L.shown?'':', card hidden for this profile'}${over[s]?'':''}</span>${over[s]?`<button class="use" data-auto="${s}" type="button">Auto</button>`:''}</header><p>${info[1]}</p><div class="tw-x"><table><thead><tr><th>Fact</th><th>Theme</th><th>Rule</th><th>Value</th><th>Status</th></tr></thead><tbody>`;
+    rows.forEach(r=>{const picked=r.f.id===pickedId&&L.shown;
+      const st=picked?`<span class="st pick">${over[s]===r.f.id?'Locked in':'In your deck'}</span>`:r.fit>0?`<span class="st ok">Eligible ${r.score.toFixed(2)}</span> <button class="use" data-slot="${s}" data-id="${r.f.id}" type="button">Use</button>`:`<span class="st">${whyNot(r)}</span>`;
+      h+=`<tr class="${picked?'picked':r.fit>0?'':'skip'}"><td>${r.f.name}</td><td><span class="tag">${r.f.theme}</span></td><td class="m">${r.f.rule}</td><td class="m">${valTxt(r)}</td><td>${st}</td></tr>`});
+    h+=`</tbody></table></div></section>`;
+  });
+  h+=`<section class="slot"><header><h3>Archetypes</h3><span>${TYPES.length} types, highest score wins</span></header><p>Scored from the person's own data. The winner gets the 2026 type card, the runner-up is named under it.</p><div class="tw-x"><table><thead><tr><th>Type</th><th>Score</th><th>Why, for this profile</th><th>Status</th></tr></thead><tbody>${LAST.types.map((t,i)=>`<tr class="${i===0?'picked':''}"><td>${t.t}</td><td class="m">${Math.round(t.sc*100)}</td><td class="m">${strip(t.why(M))}</td><td>${i===0?'<span class="st pick">Your type</span>':i===1?'<span class="st ok">Runner-up</span>':''}</td></tr>`).join('')}</tbody></table></div></section>`;
+  h+=`<section class="slot"><header><h3>Goal ideas for 2027</h3><span>top 3 with different themes</span></header><p>The 2027 card shows the three highest priority goals, one per theme.</p><div class="tw-x"><table><thead><tr><th>Goal</th><th>Rule</th><th>Priority</th><th>Status</th></tr></thead><tbody>${LAST.goals.slice().sort((a,b)=>b.pv-a.pv).map(g=>`<tr class="${LAST.picked.includes(g.id)?'picked':g.pv>0?'':'skip'}"><td>${strip(g.pv>0?g.text(M):'')||'Not for this profile'}</td><td class="m">${g.rule}</td><td class="m">${Math.round(g.pv*100)}</td><td>${LAST.picked.includes(g.id)?'<span class="st pick">On the card</span>':g.pv>0?'<span class="st ok">Eligible</span>':'<span class="st">Not for this profile</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
+  h+=`<section class="slot"><header><h3>Templates</h3><span>same data, four looks</span></header><p>Pick a look. Every card, graphic and number follows it.</p><div class="how">${themes.map(t=>`<div><b>${t[1]}</b><span>${t[2]}</span><br><button class="use" data-theme="${t[0]}" type="button" style="margin-top:8px">Use ${t[1]}</button></div>`).join('')}</div></section>`;
+  catEl.innerHTML=h;
+}
+catEl.addEventListener('click',e=>{
+  const u=e.target.closest('button'); if(!u)return;
+  if(u.dataset.slot){over[u.dataset.slot]=u.dataset.id;rebuild(false)}
+  else if(u.dataset.auto){delete over[u.dataset.auto];rebuild(false)}
+  else if(u.dataset.theme){$('selTheme').value=u.dataset.theme;applyTheme(u.dataset.theme)}
+});
+
+/* ================= wiring ================= */
+function rebuild(reset){
+  setN(P.real?P.N:NSAMPLE); M=computeM(P.real?P.Y:makeYear(P),P); DECK=buildDeck(M,over);
+  if(reset)idx=0; idx=Math.min(idx,DECK.length-1);
+  render(); renderCat(); if(mode==='cards')go(idx);
+}
+function applyTheme(t){
+  document.body.classList.remove('t-bold','t-night','t-sun','t-receipt'); document.body.classList.add(t);
+  requestAnimationFrame(()=>{fitBig();if(mode==='cards')go(idx)});
+}
+let LIST=PROFILES.slice();
+function fillProfiles(sel){$('selProfile').innerHTML=LIST.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');if(sel!=null)$('selProfile').value=sel}
+fillProfiles();
+$('selProfile').onchange=e=>{P=LIST[+e.target.value];over={};rebuild(true)};
+/* ---- Use my data dialog ---- */
+const dlg=$('dlg'),msg=$('msg');
+const say=(t,bad)=>{msg.textContent=t;msg.style.color=bad?'#ff8a8a':'#b9b6ad'};
+$('btnMine').onclick=()=>dlg.classList.add('on'); $('dClose').onclick=()=>dlg.classList.remove('on');
+$('btnSave').onclick=async()=>{const b=$('btnSave');b.disabled=true;try{await saveCurrent()}catch(e){alert(e.message)}b.disabled=false};
+$('btnSaveAll').onclick=async()=>{const b=$('btnSaveAll'),t=b.textContent;b.disabled=true;try{await saveAll(m=>{b.textContent=m||t})}catch(e){alert(e.message)}b.textContent=t;b.disabled=false};
+let FILES=[];
+function addFiles(list){
+  FILES=FILES.concat([...list]); $('flist').innerHTML=FILES.map(f=>`<li>${f.name.replace(/</g,'&lt;')} <span style="color:#6f6c64">${(f.size/1048576).toFixed(1)} MB</span></li>`).join('');
+  $('dz').classList.toggle('ok',FILES.length>0); $('dGo').disabled=!FILES.length; say('');
+}
+const dz=$('dz'); dz.onclick=()=>$('fIn').click(); $('fIn').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')}; dz.ondragleave=()=>dz.classList.remove('over');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');addFiles(e.dataTransfer.files)};
+$('dGo').onclick=async()=>{
+  const b=$('dGo'); b.disabled=true; const bar=dz.querySelector('.bar'), fill=bar.firstChild;
+  try{
+    bar.style.display='block'; fill.style.width='0';
+    const r=await ingest(FILES,t=>say(t),p=>{fill.style.width=Math.round(p*100)+'%'});
+    bar.style.display='none';
+    const mine=buildReal(r.acts,r.health);
+    const k=LIST.findIndex(p=>p.real); if(k>=0)LIST[k]=mine; else LIST.push(mine);
+    const at=LIST.indexOf(mine); fillProfiles(at); P=mine; over={}; rebuild(true);
+    dlg.classList.remove('on'); say('Found '+Object.entries(r.seen).map(([k,v])=>k+' ('+v+')').join(', ')+(r.dups?'. Removed '+r.dups+' duplicate workouts.':'.'));
+    $('flist').innerHTML=''; FILES=[]; dz.classList.remove('ok');
+  }catch(err){bar.style.display='none';say(err.message||String(err),true)}
+  b.disabled=!FILES.length;
+};
+$('selTheme').onchange=e=>applyTheme(e.target.value);
+rebuild(true);
+</script>
+</body>
+</html>
