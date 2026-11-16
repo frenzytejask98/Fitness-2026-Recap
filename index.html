@@ -50,7 +50,10 @@ nav a.gh:hover{background:#fff;color:var(--blue)}
 .hero h1 .v{color:var(--sun)}
 .lead{font-size:clamp(19px,2.1vw,23px);max-width:30ch;margin:0 0 30px;color:#e6eaff}
 .cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-.works{margin-top:26px;color:#c9d0ff;font-size:15px;max-width:46ch}
+.works{margin-top:28px;max-width:48ch}
+.works p{margin:12px 0 0;color:#c9d0ff;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{font:600 13px 'Archivo',sans-serif;padding:7px 13px;border-radius:99px;border:1.5px solid #ffffff77;color:#fff}
 
 /* phones */
 .phones{position:relative;height:560px}
@@ -153,12 +156,12 @@ footer{padding:28px 0 46px;color:var(--mute);font-size:14px;display:flex;justify
     <div>
       <div class="tag m">Season 2026 recap</div>
       <h1 class="d">You moved<br>all year.<br><span class="v">Show it.</span></h1>
-      <p class="lead">Drop in your fitness data. Get swipeable story cards you can post. About two minutes.</p>
+      <p class="lead">Bring your Strava data, your wearable data, or both. Get swipeable story cards you can post. About two minutes.</p>
       <div class="cta">
         <a class="btn main" href="app.html#mine">Make my recap</a>
         <a class="btn alt" href="app.html">See a sample first</a>
       </div>
-      <p class="works">Free. No sign up. Nothing uploaded. Works with Strava, Apple Health, Garmin, Whoop, Polar, Google Fit, and FIT, GPX or TCX files from Coros and Suunto.</p>
+      <div class="works"><div class="chips"><span>Strava</span><span>Apple Health</span><span>Garmin</span><span>Whoop</span><span>Polar</span><span>Google Fit</span><span>Coros</span><span>Suunto</span></div><p>Mix and match. Use Strava for workouts and a wearable for sleep and heart rate. Free, no sign up, nothing uploaded.</p></div>
     </div>
     <div class="phones" aria-hidden="true">
       <div class="ph p1"><div class="in"><div class="k">01 DISTANCE</div><div><div class="n">1,678</div><div class="t">km moved</div><div class="s">That is Helsinki to Rome. On foot.</div></div><div class="f"><span>2026 IN MOTION</span><span>02/19</span></div></div></div>
@@ -176,7 +179,7 @@ footer{padding:28px 0 46px;color:var(--mute);font-size:14px;display:flex;justify
     <h2 class="d">How it <span class="v">works</span></h2>
     <p class="sub">Three steps. The slow part is waiting for your export email.</p>
     <div class="bibs">
-      <div class="bib"><i></i><i></i><div class="no">01</div><h3>Get your files</h3><p>Ask Strava, Apple Health or your watch brand for your data. It is a free download. Steps are below.</p></div>
+      <div class="bib"><i></i><i></i><div class="no">01</div><h3>Get your files</h3><p>Ask Strava, Apple Health or your watch brand (Garmin, Whoop, Polar and more) for your data. It is a free download. Steps are below.</p></div>
       <div class="bib"><i></i><i></i><div class="no">02</div><h3>Drop them in</h3><p>Open the app, press "Use my data" and drop everything in one box. It works out what each file is.</p></div>
       <div class="bib"><i></i><i></i><div class="no">03</div><h3>Post your stories</h3><p>Swipe through, pick a look, then save the cards as images. Share them to Instagram from your phone.</p></div>
     </div>
@@ -186,7 +189,7 @@ footer{padding:28px 0 46px;color:var(--mute);font-size:14px;display:flex;justify
 <div class="band blue"><div class="wrap">
   <section id="files">
     <h2 class="d">Where to get <span class="v">your files</span></h2>
-    <p class="sub">Pick the apps you use. You only need one. Add more for more cards.</p>
+    <p class="sub">Pick the apps you use. Strava, wearables, or both. You only need one, and every extra source adds more cards.</p>
     <div class="lanes">
       <details>
         <summary><span class="ln">1</span><span class="nm">Strava</span><span class="g">workouts, pace, heart rate</span></summary>
