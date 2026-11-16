@@ -149,6 +149,7 @@ $('dGo').onclick=async()=>{
 };
 $('selTheme').onchange=e=>applyTheme(e.target.value);
 rebuild(true);
+if(location.hash==='#mine')dlg.classList.add('on');
 </script>
 </body>
 </html>

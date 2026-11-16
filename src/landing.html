@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2026 in Motion: your fitness year as story cards</title>
+<meta name="description" content="Turn your Strava, Apple Health, Garmin and other fitness exports into swipeable story cards. Free. Runs in your browser. Nothing is uploaded.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=Familjen+Grotesk:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f5efe3;--ink:#16120e;--mute:#6b6257;--hot:#ff5a1f;--lime:#d9ff3f;--night:#17130d;--card:#fffaf0;--line:#16120e22}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{overflow-x:clip;margin:0;background:var(--paper);color:var(--ink);font:400 18px/1.55 'Familjen Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.disp{font-family:'Anybody',Impact,sans-serif;font-weight:900;font-variation-settings:"wdth" 62;text-transform:uppercase;line-height:.88;letter-spacing:-.01em}
+.mono{font-family:'Martian Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+nav .logo{font-size:22px}
+nav a.gh{font-size:14px;text-decoration:none;border-bottom:1px solid var(--ink)}
+.btn{display:inline-block;font:600 17px/1 'Familjen Grotesk',sans-serif;padding:17px 26px;border-radius:999px;text-decoration:none;border:2px solid var(--ink);transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.main{background:var(--ink);color:var(--paper)}
+.btn.alt{background:transparent;color:var(--ink)}
+.btn:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--hot);outline-offset:3px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:36px 0 72px}
+.hero h1{font-size:clamp(64px,11vw,150px);margin:12px 0 22px}
+.hero h1 em{font-style:normal;color:var(--hot)}
+.hero p.lead{font-size:clamp(19px,2.2vw,24px);max-width:30ch;margin:0 0 28px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.trust{margin-top:22px;color:var(--mute);font-size:15px}
+
+/* phones */
+.phones{position:relative;height:560px}
+.ph{position:absolute;width:196px;aspect-ratio:9/16;border-radius:26px;overflow:hidden;container-type:inline-size;box-shadow:0 22px 50px #16120e33}
+.ph .in{position:absolute;inset:0;padding:8cqw 9cqw;display:flex;flex-direction:column;justify-content:space-between}
+.ph .k{font-family:'Martian Mono',monospace;font-size:4.2cqw;letter-spacing:.08em;opacity:.75}
+.ph .n{font-family:'Anybody',sans-serif;font-weight:900;font-variation-settings:"wdth" 62;font-size:32cqw;line-height:.85}
+.ph .t{font-size:9cqw;font-weight:600;line-height:1.05;margin-top:3cqw}
+.ph .s{font-size:5.6cqw;line-height:1.3;margin-top:3cqw}
+.ph .f{font-family:'Martian Mono',monospace;font-size:3.6cqw;opacity:.6;display:flex;justify-content:space-between}
+.p1{left:0;top:60px;transform:rotate(-7deg);background:#ff5a1f;color:#1a0d05}
+.p2{left:128px;top:0;transform:rotate(2deg);background:#17130d;color:#ffd27a;z-index:2}
+.p3{left:256px;top:70px;transform:rotate(9deg);background:#d9ff3f;color:#16200a}
+.sample{position:absolute;right:0;bottom:0;color:var(--mute)}
+
+/* sections */
+section{padding:76px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(42px,6vw,76px);margin:0 0 14px}
+.sub{color:var(--mute);max-width:46ch;margin:0 0 40px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:s}
+.step{background:var(--card);border:2px solid var(--ink);border-radius:20px;padding:26px 24px 28px;counter-increment:s}
+.step::before{content:counter(s);font-family:'Anybody',sans-serif;font-weight:900;font-variation-settings:"wdth" 62;font-size:72px;line-height:.8;color:var(--hot);display:block;margin-bottom:14px}
+.step h3{margin:0 0 6px;font-size:22px}
+.step p{margin:0;color:var(--mute);font-size:16px}
+
+/* sources */
+.src{display:grid;gap:10px}
+details{background:var(--card);border:2px solid var(--ink);border-radius:16px;overflow:hidden}
+summary{cursor:pointer;list-style:none;padding:18px 22px;display:flex;justify-content:space-between;gap:12px;align-items:center;font-weight:600;font-size:20px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:28px;line-height:1;transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+summary .tag{font-weight:400;font-size:14px;color:var(--mute);margin-left:auto;margin-right:10px;text-align:right}
+.body{padding:0 22px 22px;color:#3b342b;font-size:17px}
+.body ol{margin:0 0 10px;padding-left:22px}
+.body li{margin:4px 0}
+.body .gives{font-size:15px;color:var(--mute);margin-top:8px}
+.body b.f{background:var(--lime);padding:0 5px;border-radius:4px;font-weight:600}
+
+/* privacy */
+.priv{background:var(--night);color:#f5efe3;border-radius:30px;padding:56px 44px;margin-top:0}
+.priv h2{color:var(--lime)}
+.priv p{max-width:50ch;margin:0 0 12px;color:#d8d0c2}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.chip{border:1.5px solid #f5efe366;border-radius:999px;padding:8px 14px;font-size:14px}
+
+/* faq */
+.faq details{margin-bottom:10px}
+.faq summary{font-size:19px}
+.faq .body{font-size:17px}
+
+/* final */
+.final{text-align:center;padding:90px 0 70px}
+.final h2{font-size:clamp(52px,9vw,120px)}
+footer{padding:26px 0 44px;color:var(--mute);font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line)}
+
+@media(max-width:860px){
+ .hero{grid-template-columns:1fr;padding-bottom:40px}
+ .phones{height:430px;margin:0 auto;width:330px}
+ .ph{width:140px}.p1{left:0;top:50px}.p2{left:92px;top:0}.p3{left:184px;top:58px}
+ .steps{grid-template-columns:1fr}
+ .priv{padding:38px 24px}
+ summary .tag{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <span class="logo disp">2026 in motion</span>
+    <a class="gh" href="https://github.com/frenzytejask98/Fitness-2026-Recap">GitHub</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <div class="mono">Free. No sign up. No upload.</div>
+      <h1 class="disp">Your year, <em>as stories.</em></h1>
+      <p class="lead">Drop in your fitness data. Get swipeable cards you can post. Takes about two minutes.</p>
+      <div class="cta">
+        <a class="btn main" href="app.html#mine">Make my recap</a>
+        <a class="btn alt" href="app.html">See a sample first</a>
+      </div>
+      <p class="trust">Works with Strava, Apple Health, Garmin, Whoop, Polar, Google Fit, and FIT, GPX or TCX files from Coros and Suunto.</p>
+    </div>
+    <div class="phones" aria-hidden="true">
+      <div class="ph p1"><div class="in"><div class="k">01 DISTANCE</div><div><div class="n">1,678</div><div class="t">km moved</div><div class="s">That is Helsinki to Rome. On foot.</div></div><div class="f"><span>2026 IN MOTION</span><span>02/19</span></div></div></div>
+      <div class="ph p2"><div class="in"><div class="k">03 TIME</div><div><div class="n">186</div><div class="t">hours moving</div><div class="s">23 full nights of sleep, spent moving instead.</div></div><div class="f"><span>2026 IN MOTION</span><span>04/19</span></div></div></div>
+      <div class="ph p3"><div class="in"><div class="k">11 VO₂ MAX</div><div><div class="n">+4.7</div><div class="t">fitter than in January</div><div class="s">Your heart got stronger.</div></div><div class="f"><span>2026 IN MOTION</span><span>12/19</span></div></div></div>
+      <div class="sample mono">Sample data</div>
+    </div>
+  </header>
+
+  <section id="how">
+    <h2 class="disp">How it works</h2>
+    <p class="sub">Three steps. The slow part is waiting for your export email.</p>
+    <div class="steps">
+      <div class="step"><h3>Get your files</h3><p>Ask Strava, Apple Health or your watch brand for your data. It is a free download. Steps are below.</p></div>
+      <div class="step"><h3>Drop them in</h3><p>Open the app, press "Use my data" and drop everything in one box. It works out what each file is.</p></div>
+      <div class="step"><h3>Post your stories</h3><p>Swipe through, pick a look, then save the cards as images. Share them to Instagram from your phone.</p></div>
+    </div>
+  </section>
+
+  <section id="files">
+    <h2 class="disp">Where to get your files</h2>
+    <p class="sub">Pick the apps you use. You only need one. Add more for more cards.</p>
+    <div class="src">
+      <details>
+        <summary>Strava <span class="tag">workouts, pace, heart rate</span></summary>
+        <div class="body"><ol>
+          <li>On the Strava website, open <b>Settings</b>, then <b>My Account</b>.</li>
+          <li>Under "Download or Delete Your Account", press <b>Get Started</b>.</li>
+          <li>Press <b>Request Your Archive</b>.</li>
+          <li>Wait for the email, then download the zip.</li></ol>
+          <div>Drop the zip in as it is. Do not unzip it.</div>
+          <div class="gives">No Strava subscription needed. The email can take a while to arrive.</div></div>
+      </details>
+      <details>
+        <summary>Apple Health <span class="tag">VO₂ max, resting heart rate, sleep, steps</span></summary>
+        <div class="body"><ol>
+          <li>Open the <b>Health</b> app on your iPhone.</li>
+          <li>Tap your <b>picture</b> in the top corner.</li>
+          <li>Tap <b>Export All Health Data</b>.</li>
+          <li>Send the zip to your computer, for example with AirDrop or email.</li></ol>
+          <div>Drop <b class="f">export.zip</b> in as it is. Big files take a minute to read.</div>
+          <div class="gives">Apple Health unlocks the health cards. Pair it with Strava for the full recap.</div></div>
+      </details>
+      <details>
+        <summary>Garmin <span class="tag">workouts</span></summary>
+        <div class="body"><ol>
+          <li>Sign in to Garmin Connect on the web.</li>
+          <li>Open <b>Activities</b>, then <b>All Activities</b>.</li>
+          <li>Scroll to load the whole year, then press <b>Export CSV</b>.</li></ol>
+          <div>Or request everything at garmin.com/account/datamanagement and drop the zip in.</div>
+          <div class="gives">Garmin changes its export format now and then. If distances look wrong, open an issue on GitHub.</div></div>
+      </details>
+      <details>
+        <summary>Whoop <span class="tag">resting heart rate, sleep, workouts</span></summary>
+        <div class="body"><ol>
+          <li>Open the Whoop app, then <b>Menu</b>.</li>
+          <li>Go to <b>Data Export</b> and request it.</li>
+          <li>Download the zip from the email.</li></ol>
+          <div>Drop the zip in as it is.</div></div>
+      </details>
+      <details>
+        <summary>Polar <span class="tag">workouts</span></summary>
+        <div class="body"><ol>
+          <li>Go to account.polar.com and sign in.</li>
+          <li>Open <b>Download your data</b> and request it.</li>
+          <li>Download the zip when it is ready.</li></ol>
+          <div>Drop the zip in as it is.</div></div>
+      </details>
+      <details>
+        <summary>Google Fit <span class="tag">steps</span></summary>
+        <div class="body"><ol>
+          <li>Go to takeout.google.com.</li>
+          <li>Press <b>Deselect all</b>, then tick only <b>Fit</b>.</li>
+          <li>Create the export and download the zip.</li></ol>
+          <div>Drop the zip in next to your workout files. Fit only adds steps, so you need workouts from another app too.</div></div>
+      </details>
+      <details>
+        <summary>Coros, Suunto and others <span class="tag">workouts</span></summary>
+        <div class="body">
+          <div>These brands do not offer a full export. You have two options:</div>
+          <ol><li>Sync your watch to Strava and use the Strava export above. This is the easy one.</li>
+          <li>Export your workouts one by one as <b class="f">.fit</b>, <b class="f">.gpx</b> or <b class="f">.tcx</b> files and drop them all in together.</li></ol></div>
+      </details>
+    </div>
+    <p style="margin-top:34px"><a class="btn main" href="app.html#mine">I have my files</a></p>
+  </section>
+
+  <section>
+    <div class="priv">
+      <h2 class="disp">Your files stay with you</h2>
+      <p>Everything is read inside your own browser tab. Your files are not uploaded to a server, and there is no account.</p>
+      <p>There are no cookies and no tracking. When you close the tab, it is gone.</p>
+      <div class="chips"><span class="chip">No sign up</span><span class="chip">No upload</span><span class="chip">No tracking</span><span class="chip">Open source</span></div>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <h2 class="disp">Questions</h2>
+    <details><summary>Which file do I drop in?</summary><div class="body">The zip, exactly as you downloaded it. You can drop several files at once and the app sorts them out.</div></details>
+    <details><summary>I only have Strava. Will it work?</summary><div class="body">Yes. You get your workout cards. You will not get the VO₂ max, resting heart rate, sleep and steps cards, because those need Apple Health or a similar source.</div></details>
+    <details><summary>Why are some cards missing?</summary><div class="body">A card only shows up if your data has enough for it. No sleep data means no sleep card. This keeps every card honest.</div></details>
+    <details><summary>How do I post to Instagram?</summary><div class="body">Press <b>Save card</b> for one card or <b>Save all</b> for a zip. On a phone, Save card opens the share sheet, so you can pick Instagram. The images are 1080 by 1920, the Stories size.</div></details>
+    <details><summary>Is it really free?</summary><div class="body">Yes. It is open source, and it is a single page that runs on your device.</div></details>
+    <details><summary>My numbers look off.</summary><div class="body">Open an issue on GitHub and say which app the file came from. Remove any personal details from what you share.</div></details>
+  </section>
+
+  <div class="final">
+    <h2 class="disp">Go see your year.</h2>
+    <div class="cta" style="justify-content:center"><a class="btn main" href="app.html#mine">Make my recap</a><a class="btn alt" href="app.html">Try the sample</a></div>
+  </div>
+
+  <footer><span>2026 in Motion. Free and open source, MIT license.</span><a href="https://github.com/frenzytejask98/Fitness-2026-Recap">View the code on GitHub</a></footer>
+</div>
+</body>
+</html>

@@ -49,7 +49,7 @@ The app ships with five synthetic profiles (steady runner, marathon trainee, cyc
 
 ## Run it
 
-It is a single static file. Open `index.html` in a browser.
+It is plain static files. Open `index.html` (the landing page) in a browser. The app itself is `app.html`.
 
 To change the code, edit the files in `src/` and run:
 
@@ -59,7 +59,8 @@ To change the code, edit the files in `src/` and run:
 
 | File | Role |
 |---|---|
-| `src/partA.html` | Page shell and all CSS |
+| `src/landing.html` | The landing page with instructions, built to `index.html` |
+| `src/partA.html` | App page shell and all CSS, built with the files below to `app.html` |
 | `src/gen.js` | Sample profiles and the metrics calculation |
 | `src/facts.js` | The fact catalog, scoring, athlete types and goals |
 | `src/deck.js` | Card graphics and card builders |
@@ -70,12 +71,12 @@ To change the code, edit the files in `src/` and run:
 
 ## Host it for free
 
-Because it is one static file, anyone can host it for free and share a link:
+Because it is just static files, anyone can host it for free and share a link:
 
-- **GitHub Pages.** Put `index.html` in a repo, then Settings, Pages, deploy from the main branch. The link is `https://<username>.github.io/<repo>/`.
+- **GitHub Pages.** Put the files in a repo, then Settings, Pages, deploy from the main branch. The link is `https://<username>.github.io/<repo>/`.
 - **Cloudflare Pages, Netlify or Vercel.** Connect the repo or drag the folder in. No build step is needed.
 
-Visitors only need the link. They do not deploy anything.
+Visitors land on the instructions page and open the app from there. They only need the link. They do not deploy anything.
 
 ## Known limits
 
