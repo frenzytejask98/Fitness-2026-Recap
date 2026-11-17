@@ -1,5 +1,19 @@
 # 2026 in Motion
 
+**Try it: https://frenzytejask98.github.io/Fitness-2026-Recap/**
+
+Your fitness year as swipeable story cards. Bring your Strava data, your wearable data, or both. Free, no sign up, and your files never leave your browser.
+
+![The landing page](img/landing.webp)
+
+<p>
+<img src="img/card-climb.webp" width="31%" alt="Climbing card">
+<img src="img/card-time.webp" width="31%" alt="Time card">
+<img src="img/card-fitness.webp" width="31%" alt="Fitness card">
+</p>
+
+*Cards shown use sample data.*
+
 A year-in-sport recap that turns your Strava and Apple Health exports into swipeable story cards you can post. It runs entirely in your browser. There is no server, no account, no API key and no subscription.
 
 Drop in your export files, flip through your cards, and save them as 1080 x 1920 images for Instagram Stories.
