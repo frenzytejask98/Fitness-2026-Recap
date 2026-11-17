@@ -19,7 +19,7 @@ const add=f=>FACTS.push(f);
 /* factories */
 const xf=(slot,id,theme,name,m,unit,mk,rule)=>add({slot,id,theme,name,kind:'x',rule,calc:M=>m(M)/unit,text:(r,M)=>r<1.5?mk.one(name):mk.many(X(r),name)});
 const nfc=(slot,id,theme,name,m,unit,tpl,rule)=>add({slot,id,theme,name,kind:'n',rule,calc:M=>m(M)/unit,text:(r,M)=>tpl(nf.format(r),name)});
-const ROUTE={one:n=>`That is about ${B('one '+n)}, end to end.`,many:(x,n)=>`That is ${B(x+'×')} ${n}, end to end.`};
+const ROUTE={one:n=>`Over the whole year, that adds up to about ${B('one '+n)}, end to end.`,many:(x,n)=>`Over the whole year, that adds up to ${B(x+'×')} ${n}, end to end.`};
 const TOWER={one:n=>`That is about ${B('one '+n)}, stacked up.`,many:(x,n)=>`That is ${B(x+'×')} the ${n}, stacked up.`};
 const PEAK={one:n=>`That is about ${B('one '+n)}, climbed from sea level.`,many:(x,n)=>`That is ${B(x+'×')} ${n}, climbed from sea level.`};
 const FLY={one:n=>`That is about ${B('one '+n)} of pure movement.`,many:(x,n)=>`That is ${B(x+'×')} ${n}.`};
@@ -27,11 +27,11 @@ const FLY={one:n=>`That is about ${B('one '+n)} of pure movement.`,many:(x,n)=>`
 /* DISTANCE (all sports, km) */
 [['London to Paris',344],['Tokyo to Osaka',510],['Los Angeles to San Francisco',615],['London to Edinburgh',650],['The Camino de Santiago',800],['Sydney to Melbourne',880],['Paris to Rome',1100],['New York to Chicago',1150],['Land’s End to John o’Groats',1400],['The Tour de France route',3400],['The Appalachian Trail',3500],['Route 66',3940]]
  .forEach(([n,k])=>xf('distance','d-'+n.toLowerCase().replace(/\W+/g,'-'),'geo',n,M=>M.distKm,k,ROUTE,`total km ÷ ${nf.format(k)} km`));
-xf('distance','d-marathon','sport','marathons',M=>M.distKm,42.195,{one:()=>`That is about ${B('one marathon')}.`,many:(x)=>`That is ${B(x+' marathons')} back to back.`},'total km ÷ 42.195 km');
-xf('distance','d-channel','water','English Channel crossings, Dover to Calais, on foot',M=>M.distKm,33.8,{one:n=>`That is about ${B('one crossing')}.`,many:(x,n)=>`That is ${B(x)} ${n}.`},'total km ÷ 33.8 km');
-nfc('distance','d-laps','track','laps of a 400 m track',M=>M.distKm,.4,(x,n)=>`That is ${B(x)} ${n}. The track knows you by name.`,'total km ÷ 0.4 km');
-nfc('distance','d-pitches','ball','football pitches, end to end',M=>M.distKm,.105,(x,n)=>`That is ${B(x)} ${n}.`,'total km ÷ 0.105 km');
-add({slot:'distance',id:'d-earth',theme:'space',name:'Share of the way around the Earth',kind:'pct',rule:'total km ÷ 40,075 km × 100',calc:M=>M.distKm/40075*100,text:r=>`That is ${B(r.toFixed(1)+'%')} of the way around the Earth.`});
+xf('distance','d-marathon','sport','marathons',M=>M.distKm,42.195,{one:()=>`Over the whole year, that is about ${B('one marathon')}.`,many:(x)=>`Over the whole year, that is ${B(x+' marathons')} back to back.`},'total km ÷ 42.195 km');
+xf('distance','d-channel','water','English Channel crossings, Dover to Calais, on foot',M=>M.distKm,33.8,{one:n=>`Over the whole year, that is about ${B('one crossing')}.`,many:(x,n)=>`Over the whole year, that is ${B(x)} ${n}.`},'total km ÷ 33.8 km');
+nfc('distance','d-laps','track','laps of a 400 m track',M=>M.distKm,.4,(x,n)=>`Over the whole year, that is ${B(x)} ${n}. The track knows you by name.`,'total km ÷ 0.4 km');
+nfc('distance','d-pitches','ball','football pitches, end to end',M=>M.distKm,.105,(x,n)=>`Over the whole year, that is ${B(x)} ${n}.`,'total km ÷ 0.105 km');
+add({slot:'distance',id:'d-earth',theme:'space',name:'Share of the way around the Earth',kind:'pct',rule:'total km ÷ 40,075 km × 100',calc:M=>M.distKm/40075*100,text:r=>`Over the whole year, that is ${B(r.toFixed(1)+'%')} of the way around the Earth.`});
 
 /* CLIMB (elevation gain, m) */
 [['Statue of Liberty',93],['Big Ben',96],['Eiffel Tower',330],['Empire State Building',443],['Burj Khalifa',828]].forEach(([n,h])=>xf('climb','c-'+n.toLowerCase().replace(/\W+/g,'-'),'tower',n,M=>M.elev,h,TOWER,`elevation ÷ ${h} m`));
