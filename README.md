@@ -108,7 +108,7 @@ Visitors land on the instructions page and open the app from there. They only ne
 
 ## Privacy
 
-No analytics, no cookies, no network calls for your data. The only requests the page makes are for fonts.
+No analytics, no cookies, and your files never leave the browser. The page makes two kinds of requests: fonts, and a plain +1 on an anonymous counter (abacus.jasoncameron.dev) each time someone makes a recap. That counter is shown on the landing page once it reaches 5. To remove it, delete the two `abacus` calls in `src/landing.html` and `src/ui.js`.
 
 ## License
 

@@ -1288,6 +1288,7 @@ $('dGo').onclick=async()=>{
     const at=LIST.indexOf(mine); fillProfiles(at); P=mine; over={}; rebuild(true);
     dlg.classList.remove('on'); say('Found '+Object.entries(r.seen).map(([k,v])=>k+' ('+v+')').join(', ')+(r.dups?'. Removed '+r.dups+' duplicate workouts.':'.'));
     $('flist').innerHTML=''; FILES=[]; dz.classList.remove('ok');
+    try{if(!sessionStorage.counted){sessionStorage.counted=1;fetch('https://abacus.jasoncameron.dev/hit/frenzytejask98-fitness-2026-recap/recaps',{keepalive:true}).catch(()=>{})}}catch(e){}
   }catch(err){bar.style.display='none';say(err.message||String(err),true)}
   b.disabled=!FILES.length;
 };
