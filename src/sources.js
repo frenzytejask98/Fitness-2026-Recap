@@ -85,23 +85,37 @@ function gfitDaily(text,name){
 }
 /* ---- FIT (Garmin, Coros, Suunto, Wahoo ... the common binary workout format) ---- */
 const FITSPORT={1:'Run',2:'Ride',4:'Strength',5:'Swim',10:'Strength',11:'Walk',17:'Hike'};
-function fitSessions(buf){
-  const dv=new DataView(buf), u8=new Uint8Array(buf); if(buf.byteLength<16||String.fromCharCode(u8[8],u8[9],u8[10],u8[11])!=='.FIT')return [];
-  const hs=u8[0], ds=dv.getUint32(4,true), end=Math.min(buf.byteLength-2,hs+ds), defs={}, out=[]; let p=hs;
-  const rd=(q,sz,bt,le)=>{const t=bt&31;if(sz===1){const v=u8[q];return v===255?NaN:v}if(sz===2){const v=dv.getUint16(q,le);return v===65535?NaN:v}if(sz===4){const v=dv.getUint32(q,le);return v===4294967295?NaN:v}return NaN};
+/* walks a FIT file and calls cb(fields) for every data message with the wanted global number (18 session, 20 record) */
+function fitWalk(buf,want,cb){
+  const dv=new DataView(buf), u8=new Uint8Array(buf); if(buf.byteLength<16||String.fromCharCode(u8[8],u8[9],u8[10],u8[11])!=='.FIT')return;
+  const hs=u8[0], ds=dv.getUint32(4,true), end=Math.min(buf.byteLength-2,hs+ds), defs={}; let p=hs, lastTs=0;
+  const rd=(q,sz,le)=>{if(sz===1){const v=u8[q];return v===255?NaN:v}if(sz===2){const v=dv.getUint16(q,le);return v===65535?NaN:v}if(sz===4){const v=dv.getUint32(q,le);return v===4294967295?NaN:v}return NaN};
+  const decode=(d,q)=>{const r={};for(const fd of d.f){r[fd.num]=rd(q,fd.size,d.le);q+=fd.size}return r};
   while(p<end){
     const h=u8[p++];
-    if(h&0x80){const d=defs[(h>>5)&3]; if(!d)break; p+=d.size; continue}
+    if(h&0x80){const d=defs[(h>>5)&3]; if(!d)break;
+      if(d.g===want){const r=decode(d,p),off=h&31;let ts=(lastTs&~31)+off;if(ts<lastTs)ts+=32;r[253]=ts;lastTs=ts;cb(r)}
+      p+=d.size; continue}
     const l=h&15;
     if(h&0x40){p++; const le=u8[p++]===0, g=dv.getUint16(p,le); p+=2; const n=u8[p++], f=[]; let size=0;
-      for(let k=0;k<n;k++){f.push({num:u8[p],size:u8[p+1],bt:u8[p+2]});size+=u8[p+1];p+=3}
+      for(let k=0;k<n;k++){f.push({num:u8[p],size:u8[p+1]});size+=u8[p+1];p+=3}
       if(h&0x20){const nd=u8[p++];for(let k=0;k<nd;k++){size+=u8[p+1];p+=3}}
-      defs[l]={g,le,f,size};
+      defs[l]={g,le,f,size,ts:f.some(x=>x.num===253)};
     }else{const d=defs[l]; if(!d)break;
-      if(d.g===18){let q=p;const r={};for(const fd of d.f){r[fd.num]=rd(q,fd.size,fd.bt,d.le);q+=fd.size}out.push(r)}
+      const r=d.g===want||d.ts?decode(d,p):null; if(r&&isFinite(r[253]))lastTs=r[253];
+      if(d.g===want)cb(r);
       p+=d.size}
   }
-  return out;
+}
+function fitSessions(buf){const out=[];fitWalk(buf,18,r=>out.push(r));return out}
+/* distance in metres against time in seconds, from FIT records */
+const semi=v=>(v>2147483647?v-4294967296:v)*(180/2147483648);
+function fitTrack(buf){
+  const t=[],d=[]; let la0,lo0,cum=0;
+  fitWalk(buf,20,r=>{const ts=r[253]; if(!(ts>0))return;
+    if(isFinite(r[5])){t.push(ts);d.push(r[5]/100)}
+    else if(isFinite(r[0])&&isFinite(r[1])&&r[0]!==2147483647){const la=semi(r[0]),lo=semi(r[1]);if(la0!==undefined)cum+=hav(la0,lo0,la,lo)*1000;la0=la;lo0=lo;t.push(ts);d.push(cum)}});
+  return {t,d};
 }
 function fitActs(buf){
   const out=[]; fitSessions(buf).forEach(r=>{
@@ -121,6 +135,33 @@ function gpxActs(text){
   let km=0; for(let i=1;i<pts.length;i++)km+=hav(pts[i-1].la,pts[i-1].lo,pts[i].la,pts[i].lo);
   const hr=pts.map(x=>x.h).filter(isFinite), a=mkAct(type,partsFromMs(pts[0].t),km,(pts[pts.length-1].t-pts[0].t)/1000,gain(pts.map(x=>x.e).filter(isFinite)),hr.length?hr.reduce((s,v)=>s+v,0)/hr.length:NaN,NaN);
   return a?[a]:[];
+}
+function gpxTrack(text){
+  const t=[],d=[]; let la0,lo0,cum=0,m; const re=/<trkpt\b([^>]*)>([\s\S]*?)<\/trkpt>/g;
+  while((m=re.exec(text))){const la=+(m[1].match(/lat="([-\d.]+)"/)||[])[1],lo=+(m[1].match(/lon="([-\d.]+)"/)||[])[1],tm=(m[2].match(/<time>([^<]*)<\/time>/)||[])[1];
+    if(!isFinite(la)||!isFinite(lo)||!tm)continue; if(la0!==undefined)cum+=hav(la0,lo0,la,lo)*1000; la0=la;lo0=lo; t.push(Date.parse(tm)/1000);d.push(cum)}
+  return {t,d};
+}
+function tcxTrack(text){
+  const t=[],d=[]; let m; const re=/<Trackpoint>([\s\S]*?)<\/Trackpoint>/g;
+  while((m=re.exec(text))){const tm=(m[1].match(/<Time>([^<]*)<\/Time>/)||[])[1],ds=(m[1].match(/<DistanceMeters>([\d.]+)</)||[])[1]; if(tm&&ds){t.push(Date.parse(tm)/1000);d.push(+ds)}}
+  return {t,d};
+}
+/* fastest 5K, 10K and half marathon inside one run, found by sliding a window along distance */
+const EFFORTS=[['5K',5000],['10K',10000],['Half marathon',21097.5]];
+function bestEfforts(tr){
+  const {t,d}=tr, out={}, n=d.length; if(n<20)return out;
+  for(const [name,D] of EFFORTS){
+    if(d[n-1]-d[0]<D)continue; let j=0,best=Infinity;
+    for(let i=0;i<n;i++){
+      while(j+1<i&&d[i]-d[j+1]>=D)j++;
+      if(d[i]-d[j]<D)continue;
+      const span=d[j+1]-d[j], f=span>0?(d[i]-D-d[j])/span:0, t0=t[j]+(t[j+1]-t[j])*Math.max(0,Math.min(1,f)), sec=t[i]-t0;
+      if(sec>0&&sec<best)best=sec;
+    }
+    if(isFinite(best)&&best/(D/1000)>=150&&best/(D/1000)<=900)out[name]=best; /* ignore GPS glitches faster than 2:30/km */
+  }
+  return out;
 }
 function tcxActs(text){
   const out=[], re=/<Activity\b[^>]*Sport="([^"]*)"[^>]*>([\s\S]*?)<\/Activity>/g; let m;
@@ -143,16 +184,20 @@ function classify(name){
   if(/^sleeps\.csv$/i.test(b))return 'whoopsleeps';
   if(/^workouts\.csv$/i.test(b))return 'whoopworkouts';
   if(/daily (activity )?(metrics|summar)/i.test(n)&&/\.csv$/i.test(b))return 'gfitdaily';
-  if(/\.fit$/i.test(b))return 'fit'; if(/\.gpx$/i.test(b))return 'gpx'; if(/\.tcx$/i.test(b))return 'tcx';
+  if(/\.fit(\.gz)?$/i.test(b))return 'fit'; if(/\.gpx(\.gz)?$/i.test(b))return 'gpx'; if(/\.tcx(\.gz)?$/i.test(b))return 'tcx';
   if(/^activities.*\.csv$/i.test(b))return 'activitiescsv';
   return null;
 }
-const LABEL={apple:'Apple Health',garminjson:'Garmin',polar:'Polar',whoopcycles:'Whoop',whoopsleeps:'Whoop',whoopworkouts:'Whoop',gfitdaily:'Google Fit',fit:'FIT files',gpx:'GPX files',tcx:'TCX files',activitiescsv:'activities CSV'};
+const LABEL={stravatrack:'Strava tracks',apple:'Apple Health',garminjson:'Garmin',polar:'Polar',whoopcycles:'Whoop',whoopsleeps:'Whoop',whoopworkouts:'Whoop',gfitdaily:'Google Fit',fit:'FIT files',gpx:'GPX files',tcx:'TCX files',activitiescsv:'activities CSV'};
 async function collect(files){
   const items=[];
   for(const f of files){
     if(/\.zip$/i.test(f.name)){
-      for(const en of await zipEntries(f)){ if(en.name.endsWith('/'))continue; const kind=classify(en.name); if(kind)items.push({kind,name:en.name,size:en.usize,stream:()=>entryStream(f,en)}) }
+      const ents=await zipEntries(f), strava=ents.some(e=>/(^|\/)activities\.csv$/i.test(e.name));
+      for(const en of ents){ if(en.name.endsWith('/'))continue; let kind=classify(en.name);
+        /* in a Strava archive the files under activities/ are the GPS tracks of the workouts listed in activities.csv, so use them for best efforts only */
+        if(strava&&/(^|\/)activities\/[^\/]+\.(fit|gpx|tcx)(\.gz)?$/i.test(en.name))kind='stravatrack';
+        if(kind)items.push({kind,name:en.name,size:en.usize,stream:()=>entryStream(f,en)}) }
     }else{const kind=classify(f.name); if(kind)items.push({kind,name:f.name,size:f.size,stream:async()=>f.stream()}); else items.push({kind:null,name:f.name})}
   }
   return items;
@@ -167,11 +212,13 @@ async function ingest(files,onStatus,onProgress){
   const items=await collect(files), acts=[], H={vo2:[],rhr:[],sleep:[],steps:{}}, seen={}, errs=[], skipped=[];
   const note=(k,n)=>{const l=LABEL[k];seen[l]=(seen[l]||0)+n};
   const take=p=>{['vo2','rhr','sleep'].forEach(k=>{if(p[k]&&p[k].length&&!H[k].length)H[k]=p[k]});if(p.steps)Object.entries(p.steps).forEach(([d,v])=>{H.steps[d]=Math.max(H.steps[d]||0,v)})};
-  const text=async it=>new Response(await it.stream()).text();
-  const buf=async it=>new Response(await it.stream()).arrayBuffer();
+  const src=async it=>{const st=await it.stream();return /\.gz$/i.test(it.name)?st.pipeThrough(new DecompressionStream('gzip')):st};
+  const text=async it=>new Response(await src(it)).text();
+  const buf=async it=>new Response(await src(it)).arrayBuffer();
   let sleepAlt=[], done=0;
   for(const it of items){
     if(!it.kind){skipped.push(it.name);continue}
+    if(it.kind==='stravatrack')continue;
     if(onStatus&&(done++%25===0||it.kind==='apple'))onStatus('Reading '+LABEL[it.kind]+'...');
     try{
       let a=null;
@@ -192,6 +239,22 @@ async function ingest(files,onStatus,onProgress){
     }catch(e){errs.push(it.name.split('/').pop()+': '+e.message)}
   }
   if(!H.sleep.length&&sleepAlt.length)H.sleep=sleepAlt;
+  /* real best efforts from the Strava GPS tracks */
+  const tracks={}; items.forEach(it=>{if(it.kind==='stravatrack')tracks[it.name.split('/').pop().toLowerCase()]=it});
+  const need=acts.filter(a=>a.type==='Run'&&a.file&&a.km>=5&&tracks[a.file.split('/').pop().toLowerCase()]);
+  let bestN=0;
+  for(let k=0;k<need.length;k++){
+    const a=need[k], it=tracks[a.file.split('/').pop().toLowerCase()];
+    if(onStatus&&k%5===0)onStatus('Finding your best efforts ('+(k+1)+' of '+need.length+')...');
+    try{
+      const name=it.name.toLowerCase(), raw=await src(it);
+      const kind=/\.fit/.test(name)?'fit':/\.gpx/.test(name)?'gpx':'tcx';
+      let tr; if(kind==='fit')tr=fitTrack(await new Response(raw).arrayBuffer()); else{const tx=await new Response(raw).text();tr=kind==='gpx'?gpxTrack(tx):tcxTrack(tx)}
+      const be=bestEfforts(tr); if(Object.keys(be).length){a.best=be;bestN++}
+    }catch(e){}
+    if(k%10===0)await new Promise(r=>setTimeout(r,0));
+  }
+  if(bestN)seen['Best efforts from '+bestN+' runs']=bestN;
   const A=dedupe(acts);
   if(!A.length&&!H.rhr.length&&!H.sleep.length&&!Object.keys(H.steps).length){
     throw new Error(errs[0]||(skipped.length?'I did not recognise these files: '+skipped.slice(0,3).join(', ')+'. Drop the zip or CSV exactly as you downloaded it.':'No 2026 data found in these files.'));

@@ -104,11 +104,21 @@ function computeM(Y,P){
     M.gain=M.pace0-M.pace1; M.speed=3600/M.pace1;
     M.runSteps=sum(runs,a=>a.sec/60*(a.cad||0)); M.runHeartbeats=sum(runs,a=>a.sec/60*(a.hr||0));
     M.fast=runs.filter(a=>a.km>=Math.min(5,M.longestRun.km)).reduce((m,a)=>a.pace<m.pace?a:m);
-    // personal bests, estimated from the best run that was at least that long
+    // personal bests. Real best efforts (from GPS tracks) when we have them, otherwise estimated from the best run that was long enough
+    const real=runs.some(a=>a.best);
+    M.prEst=!!(P&&P.real)&&!real;
+    if(real){
+      M.prs=[['5K',5],['10K',10],['Half marathon',21.0975]].map(([n,d])=>{
+        const c=runs.filter(a=>a.best&&a.best[n]); if(!c.length)return null;
+        const best=c.reduce((m,a)=>a.best[n]<m.best[n]?a:m), early=c.filter(a=>a.i<N/3);
+        if(!early.length)return null; const then=Math.min(...early.map(a=>a.best[n])), now=best.best[n];
+        if(then<=now+1)return null; return {d:n,dist:d,now,then,when:best.date}}).filter(Boolean);
+    }else{
     M.prs=[['5K',5,.94],['10K',10,.96],['Half marathon',21.0975,.97]].filter(([n,d])=>M.longestRun.km>=d).map(([n,d,f])=>{
       const c=runs.filter(a=>a.km>=d), best=c.reduce((m,a)=>a.pace<m.pace?a:m), early=c.filter(a=>a.i<56);
       let now=best.pace*d*f, then=early.length?Math.min(...early.map(a=>a.pace))*d*f:M.pace0*d*1.03;
       if(then<=now)then=now*1.04; return {d:n,dist:d,now,then,when:best.date}});
+    }
   }
   M.hasVo2=vo2.length>=8;M.hasRhr=rhr.length>=8;M.hasSleep=sleep.length>=8;
   M.vo2a=head(vo2,4);M.vo2b=tail(vo2,4);M.vo2gain=M.vo2b-M.vo2a;

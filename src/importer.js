@@ -68,7 +68,7 @@ const mapType=t=>{t=String(t).trim();for(const [r,n] of TYPEMAP)if(r.test(t))ret
 function stravaActs(text){
   const rows=parseCSV(text); if(rows.length<2)throw new Error('The Strava file has no activities.');
   const H=rows[0].map(h=>h.trim()), last=n=>H.lastIndexOf(n), first=n=>H.indexOf(n);
-  const c={date:last('Activity Date'),type:last('Activity Type'),dist:last('Distance'),dist0:first('Distance'),mov:last('Moving Time'),ela:last('Elapsed Time'),elev:last('Elevation Gain'),hr:last('Average Heart Rate'),cad:last('Average Cadence')};
+  const c={date:last('Activity Date'),type:last('Activity Type'),dist:last('Distance'),dist0:first('Distance'),mov:last('Moving Time'),ela:last('Elapsed Time'),elev:last('Elevation Gain'),hr:last('Average Heart Rate'),cad:last('Average Cadence'),file:first('Filename')};
   if(c.date<0||c.type<0)throw new Error('Could not find the Strava columns. The export must use English headers (Activity Date, Activity Type).');
   const acts=[]; let seen=0;
   for(let r=1;r<rows.length;r++){
@@ -82,6 +82,7 @@ function stravaActs(text){
     if(type==='Run'&&km<.5)continue;
     const a={type,i:Math.round((dateMs-T0)/DAY),date:dateMs,dow:d.getDay(),hour:d.getHours(),km,sec,elev:isFinite(NUM(R[c.elev]))?NUM(R[c.elev]):0};
     if(type==='Run')a.pace=sec/km;
+    if(c.file>=0&&R[c.file])a.file=R[c.file];
     const hr=NUM(R[c.hr]); if(hr>40&&hr<230)a.hr=Math.round(hr);
     let cad=NUM(R[c.cad]); if(cad>0){if(type==='Run'&&cad<120)cad*=2;if(type==='Run'||!isFinite(a.cad))a.cad=Math.round(cad)}
     acts.push(a);

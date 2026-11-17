@@ -17,7 +17,7 @@ Drop in your export files, flip through your cards, and save them as 1080 x 1920
 
 | Source | How to export | What it gives the recap |
 |---|---|---|
-| **Strava** | Settings, My Account, Download or Delete Your Account, Request Your Archive. You get a zip by email. | Workouts, pace, distance, elevation, heart rate, cadence |
+| **Strava** | Settings, My Account, Download or Delete Your Account, Request Your Archive. You get a zip by email. Drop the whole zip so the app can read your GPS files. | Workouts, pace, distance, elevation, heart rate, cadence, real personal bests |
 | **Apple Health** | Health app, tap your picture, Export All Health Data | VO2 max, resting heart rate, sleep, steps |
 | **Garmin** | Garmin Connect, Activities, Export CSV. Or request all your data at garmin.com/account/datamanagement | Workouts. The full export also has more |
 | **Whoop** | App, Menu, Data Export | Resting heart rate, sleep, workouts |
@@ -86,7 +86,7 @@ Visitors land on the instructions page and open the app from there. They only ne
 
 - **Years.** The recap covers 2026 and reads only 2026 activity.
 - **Fonts.** The page loads fonts from Google Fonts, and the image export fetches them again to embed them. If they cannot load, cards still export, with system fonts.
-- **Personal records** are estimated from your best runs, not read from Strava's best efforts.
+- **Personal records.** Strava does not put best efforts in its export, so the app finds them itself. With the Strava zip it reads the GPS file of each run of 5 km or more and finds your fastest 5K, 10K and half marathon inside it. If it only gets `activities.csv` (no zip), it falls back to an estimate and the card says so. Reading many GPS files can take a little while.
 - **Garmin units.** Garmin's export formats vary by version and account settings. If distances look off, tell us what your file looks like.
 - **Coros and Suunto** have no bulk export. Per-workout files or a Strava sync are the way in.
 - **Comparisons.** The playful real-world comparisons (distances, heights, times) are approximate.
