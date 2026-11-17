@@ -197,10 +197,16 @@ async function collect(files){
       for(const en of ents){ if(en.name.endsWith('/'))continue; let kind=classify(en.name);
         /* in a Strava archive the files under activities/ are the GPS tracks of the workouts listed in activities.csv, so use them for best efforts only */
         if(strava&&/(^|\/)activities\/[^\/]+\.(fit|gpx|tcx)(\.gz)?$/i.test(en.name))kind='stravatrack';
-        if(kind)items.push({kind,name:en.name,size:en.usize,stream:()=>entryStream(f,en)}) }
-    }else{const kind=classify(f.name); if(kind)items.push({kind,name:f.name,size:f.size,stream:async()=>f.stream()}); else items.push({kind:null,name:f.name})}
+        if(kind)items.push({kind,name:en.name,size:en.usize,file:f,en,stream:()=>entryStream(f,en)}) }
+    }else{const kind=classify(f.name); if(kind)items.push({kind,name:f.name,size:f.size,file:f,stream:async()=>f.stream()}); else items.push({kind:null,name:f.name})}
   }
   return items;
+}
+/* Strava headers follow the account language, so also recognise it by shape: many columns and a numeric activity id in the first column */
+function isStravaCSV(t){
+  if(/Activity Date/.test(t.slice(0,3000)))return true;
+  const l=t.split('\n',3); if(l.length<2)return false;
+  return l[0].split(',').length>=32&&/^\s*\d{4,}\s*,/.test(l[1]);
 }
 function dedupe(acts){
   acts.sort((a,b)=>a.i-b.i||a.hour-b.hour); const out=[];
@@ -223,8 +229,8 @@ async function ingest(files,onStatus,onProgress){
     try{
       let a=null;
       switch(it.kind){
-        case 'apple':{const p=await parseHealth(await it.stream(),it.size,onProgress);take(p);note('apple',p.counts.vo2+p.counts.rhr+p.counts.steps+p.counts.sleep);break}
-        case 'activitiescsv':{const t=await text(it);a=/Activity Date/.test(t.slice(0,3000))?stravaActs(t):garminCSV(t);if(a.length&&/Activity Date/.test(t.slice(0,3000)))seen['Strava']=(seen['Strava']||0)+a.length;else if(a.length)seen['Garmin']=(seen['Garmin']||0)+a.length;a=a.length?a:null;if(a)acts.push(...a);a=null;break}
+        case 'apple':{let p; try{p=await parseHealthWorker(it,onProgress)}catch(e){p=await parseHealth(await it.stream(),it.size,onProgress)} take(p);note('apple',p.counts.vo2+p.counts.rhr+p.counts.steps+p.counts.sleep);break}
+        case 'activitiescsv':{const t=await text(it);const isS=isStravaCSV(t);a=isS?stravaActs(t):garminCSV(t);if(a.length&&isS)seen['Strava']=(seen['Strava']||0)+a.length;else if(a.length)seen['Garmin']=(seen['Garmin']||0)+a.length;a=a.length?a:null;if(a)acts.push(...a);a=null;break}
         case 'garminjson':a=garminJSON(await text(it));break;
         case 'polar':a=polarJSON(await text(it));break;
         case 'whoopcycles':take(whoopCycles(await text(it)));note('whoopcycles',1);break;

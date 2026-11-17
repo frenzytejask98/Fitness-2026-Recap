@@ -60,8 +60,15 @@ function parseCSV(t){
 function parseStravaDate(s){
   s=String(s).trim(); const m=s.match(/^([A-Za-z]{3})[a-z]* (\d{1,2}), (\d{4}),? (\d{1,2}):(\d{2}):(\d{2}) ?(AM|PM)$/i);
   if(m){let h=+m[4]%12;if(/pm/i.test(m[7]))h+=12;return Date.UTC(+m[3],MONI[m[1].toLowerCase()],+m[2],h,+m[5],+m[6])}
+  /* localised exports: "5 tammi 2026 klo 8.30.00", "5. Jan. 2026, 08:30:00", "05.01.2026 08:30:00" (day first) */
+  let m2=s.match(/^(\d{1,2})[.\s\/-]+([^\d\s.,\/-]+)\.?,?\s+(\d{4}),?\s+(?:\D+\s+)?(\d{1,2})[.:](\d{2})(?:[.:](\d{2}))?/);
+  if(m2){const mo=monthOf(m2[2]); if(mo>=0)return Date.UTC(+m2[3],mo,+m2[1],+m2[4],+m2[5],+(m2[6]||0))}
+  m2=s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4}),?\s+(\d{1,2})[.:](\d{2})(?:[.:](\d{2}))?/);
+  if(m2&&+m2[2]<=12)return Date.UTC(+m2[3],+m2[2]-1,+m2[1],+m2[4],+m2[5],+(m2[6]||0));
   const t=Date.parse(s.replace(' ','T')+'Z'); return isFinite(t)?t:null;
 }
+const MONTHS=[/^(jan|tam|ene|gen)/,/^(feb|fev|hel)/,/^(mar(?!ras)|maa|mrt)/,/^(apr|avr|abr|huh)/,/^(may|mai|mag|mei|maj|tou)/,/^(jun|kes|giu)/,/^(jul|hei|lug)/,/^(aug|aou|ago|elo)/,/^(sep|syy|set)/,/^(oct|okt|lok|ott|out)/,/^(nov|marras)/,/^(dec|dez|dic|jou)/];
+const monthOf=n=>{n=n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return MONTHS.findIndex(r=>r.test(n))};
 const TYPEMAP=[[/run/i,'Run'],[/ride|cycl|bike/i,'Ride'],[/^walk/i,'Walk'],[/hike/i,'Hike'],[/weight|crossfit|strength/i,'Strength']];
 const mapType=t=>{t=String(t).trim();for(const [r,n] of TYPEMAP)if(r.test(t))return n;return t||'Other'};
 
@@ -69,7 +76,11 @@ function stravaActs(text){
   const rows=parseCSV(text); if(rows.length<2)throw new Error('The Strava file has no activities.');
   const H=rows[0].map(h=>h.trim()), last=n=>H.lastIndexOf(n), first=n=>H.indexOf(n);
   const c={date:last('Activity Date'),type:last('Activity Type'),dist:last('Distance'),dist0:first('Distance'),mov:last('Moving Time'),ela:last('Elapsed Time'),elev:last('Elevation Gain'),hr:last('Average Heart Rate'),cad:last('Average Cadence'),file:first('Filename')};
-  if(c.date<0||c.type<0)throw new Error('Could not find the Strava columns. The export must use English headers (Activity Date, Activity Type).');
+  if(c.date<0||c.type<0){
+    /* headers follow the account language, but the column order does not: fall back to Strava's usual positions */
+    if(H.length>=32&&parseStravaDate(rows[1][1])!==null)Object.assign(c,{date:1,type:3,ela:15,mov:16,dist0:6,dist:17,elev:20,cad:29,hr:31,file:12});
+    else throw new Error('Could not read the Strava columns. Please send the activities.csv from the Strava export, unedited.');
+  }
   const acts=[]; let seen=0;
   for(let r=1;r<rows.length;r++){
     const R=rows[r]; if(R.length<=c.type)continue;
@@ -87,7 +98,7 @@ function stravaActs(text){
     let cad=NUM(R[c.cad]); if(cad>0){if(type==='Run'&&cad<120)cad*=2;if(type==='Run'||!isFinite(a.cad))a.cad=Math.round(cad)}
     acts.push(a);
   }
-  if(!acts.length)throw new Error(seen?'No usable 2026 activities found.':'No 2026 activities found in this file.');
+  if(!acts.length)throw new Error(seen?'No usable 2026 activities found.':(rows.slice(1,6).every(r=>parseStravaDate(r[c.date])===null)?'Could not read the dates in this file. Its date format is new to me.':'No 2026 activities found in this file.'));
   return acts;
 }
 async function readStravaFile(file){
@@ -134,6 +145,21 @@ async function parseHealth(stream,size,onProgress){
   const stepDay=perDay(steps), sleepDay=perDay(sleep), sw={};
   Object.entries(sleepDay).forEach(([d,h])=>{if(h>=3&&h<=14){const w=Math.floor(d/7)*7;(sw[w]=sw[w]||{s:0,n:0});sw[w].s+=h;sw[w].n++}});
   return {vo2:weekly(vo2),rhr:weekly(rhr),sleep:weekly(sw),steps:stepDay,counts:cnt};
+}
+/* the big export.xml is parsed in a Web Worker so the page never freezes; falls back to the main thread if workers are unavailable */
+function healthWorkerSrc(){
+  return 'const DAY='+DAY+',T0='+T0+';const attr='+attr.toString()+';const dayIdx='+dayIdx.toString()+';const tsMs='+tsMs.toString()+';'
+    +entryStream.toString()+parseHealth.toString()
+    +';onmessage=async e=>{const {file,en}=e.data;try{const stream=en?await entryStream(file,en):file.stream();const p=await parseHealth(stream,en?(en.usize||file.size):file.size,v=>postMessage({p:v}));postMessage({done:p})}catch(err){postMessage({err:String(err&&err.message||err)})}}';
+}
+function parseHealthWorker(it,onProgress){
+  return new Promise((res,rej)=>{
+    let w,u; try{u=URL.createObjectURL(new Blob([healthWorkerSrc()],{type:'text/javascript'}));w=new Worker(u)}catch(e){return rej(e)}
+    const end=()=>{w.terminate();URL.revokeObjectURL(u)};
+    w.onmessage=e=>{const d=e.data; if(d.p!==undefined){if(onProgress)onProgress(d.p)} else if(d.done){end();res(d.done)} else {end();rej(new Error(d.err))}};
+    w.onerror=()=>{end();rej(new Error('worker failed'))};
+    w.postMessage({file:it.file,en:it.en||null});
+  });
 }
 async function readHealthFile(file,onProgress){
   const {stream,size}=await openSource(file,/(^|\/)export\.xml$/i);

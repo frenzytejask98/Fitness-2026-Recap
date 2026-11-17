@@ -101,6 +101,8 @@ Visitors land on the instructions page and open the app from there. They only ne
 - **Years.** The recap covers 2026 and reads only 2026 activity.
 - **Fonts.** The page loads fonts from Google Fonts, and the image export fetches them again to embed them. If they cannot load, cards still export, with system fonts.
 - **Personal records.** Strava does not put best efforts in its export, so the app finds them itself. With the Strava zip it reads the GPS file of each run of 5 km or more and finds your fastest 5K, 10K and half marathon inside it. If it only gets `activities.csv` (no zip), it falls back to an estimate and the card says so. Reading many GPS files can take a little while.
+- **Language.** Strava translates the column headers and dates in activities.csv for non-English accounts. The app falls back to Strava's usual column order and understands day-month-year dates in the main European languages, but this has only been tested on a Finnish style file I built myself. If your file is rejected, open an issue with the first two lines (personal data removed).
+- **Big Apple Health files.** export.xml is streamed in a Web Worker and filtered to four record types, so multi gigabyte files should not freeze the page. Only tested up to small files so far.
 - **Garmin units.** Garmin's export formats vary by version and account settings. If distances look off, tell us what your file looks like.
 - **Coros and Suunto** have no bulk export. Per-workout files or a Strava sync are the way in.
 - **Comparisons.** The playful real-world comparisons (distances, heights, times) are approximate.
