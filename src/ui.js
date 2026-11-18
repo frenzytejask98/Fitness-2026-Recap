@@ -138,18 +138,34 @@ $('selProfile').onchange=e=>{P=LIST[+e.target.value];over={};rebuild(true)};
 const dlg=$('dlg'),msg=$('msg');
 const say=(t,bad)=>{msg.textContent=t;msg.style.color=bad?'#ff8a8a':'#b9b6ad'};
 $('btnMine').onclick=()=>dlg.classList.add('on'); $('dClose').onclick=()=>dlg.classList.remove('on');
-$('btnSave').onclick=async()=>{const b=$('btnSave');b.disabled=true;try{await saveCurrent()}catch(e){alert(e.message)}b.disabled=false};
-$('btnSaveAll').onclick=async()=>{const b=$('btnSaveAll'),t=b.textContent;b.disabled=true;try{await saveAll(m=>{b.textContent=m||t})}catch(e){alert(e.message)}b.textContent=t;b.disabled=false};
-let FILES=[];
+const sm=$('saveMenu'), sb=$('btnSave');
+sb.onclick=e=>{e.stopPropagation();const r=sb.getBoundingClientRect();sm.style.top=(r.bottom+6)+'px';sm.style.right=Math.max(8,innerWidth-r.right)+'px';sm.classList.toggle('on')};
+document.addEventListener('click',()=>sm.classList.remove('on'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')sm.classList.remove('on')});
+sm.onclick=async e=>{
+  const a=e.target.dataset.a; if(!a)return; sm.classList.remove('on');
+  if(a==='pick'){setMode('grid');return}
+  const t=sb.innerHTML; sb.disabled=true;
+  try{ if(a==='one')await saveCurrent(); else await saveAll(m=>{sb.textContent=m||''}) }catch(err){alert(err.message)}
+  sb.innerHTML=t; sb.disabled=false;
+};
+let FILES=[], tmr=null, busy=false;
+function drawList(){
+  $('flist').innerHTML=FILES.map(f=>`<li>${f.name.replace(/</g,'&lt;')} <span style="color:#6f6c64">${(f.size/1048576).toFixed(1)} MB</span></li>`).join('');
+  $('dz').classList.toggle('ok',FILES.length>0); $('dReset').style.display=FILES.length?'':'none';
+}
+/* files start building by themselves a moment after the last drop, so there is no button to press */
 function addFiles(list){
-  FILES=FILES.concat([...list]); $('flist').innerHTML=FILES.map(f=>`<li>${f.name.replace(/</g,'&lt;')} <span style="color:#6f6c64">${(f.size/1048576).toFixed(1)} MB</span></li>`).join('');
-  $('dz').classList.toggle('ok',FILES.length>0); $('dGo').disabled=!FILES.length; say('');
+  [...list].forEach(f=>{if(!FILES.some(x=>x.name===f.name&&x.size===f.size))FILES.push(f)});
+  drawList(); say('Starting...'); clearTimeout(tmr); tmr=setTimeout(build,1200);
 }
 const dz=$('dz'); dz.onclick=()=>$('fIn').click(); $('fIn').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')}; dz.ondragleave=()=>dz.classList.remove('over');
 dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');addFiles(e.dataTransfer.files)};
-$('dGo').onclick=async()=>{
-  const b=$('dGo'); b.disabled=true; const bar=dz.querySelector('.bar'), fill=bar.firstChild;
+$('dReset').onclick=()=>{FILES=[];drawList();say('')};
+async function build(){
+  if(busy){tmr=setTimeout(build,800);return}
+  if(!FILES.length)return; busy=true; const bar=dz.querySelector('.bar'), fill=bar.firstChild;
   try{
     bar.style.display='block'; fill.style.width='0';
     const r=await ingest(FILES,t=>say(t),p=>{fill.style.width=Math.round(p*100)+'%'});
@@ -158,11 +174,10 @@ $('dGo').onclick=async()=>{
     const k=LIST.findIndex(p=>p.real); if(k>=0)LIST[k]=mine; else LIST.push(mine);
     const at=LIST.indexOf(mine); fillProfiles(at); P=mine; over={}; rebuild(true);
     dlg.classList.remove('on'); say('Found '+Object.entries(r.seen).map(([k,v])=>k+' ('+v+')').join(', ')+(r.dups?'. Removed '+r.dups+' duplicate workouts.':'.'));
-    $('flist').innerHTML=''; FILES=[]; dz.classList.remove('ok');
     try{if(!sessionStorage.counted){sessionStorage.counted=1;fetch('https://abacus.jasoncameron.dev/hit/frenzytejask98-fitness-2026-recap/recaps',{keepalive:true}).catch(()=>{})}}catch(e){}
-  }catch(err){bar.style.display='none';say(err.message||String(err),true)}
-  b.disabled=!FILES.length;
-};
+  }catch(err){bar.style.display='none';FILES=[];drawList();say((err.message||String(err))+' Drop your files again.',true)}
+  busy=false;
+}
 $('selTheme').onchange=e=>applyTheme(e.target.value);
 rebuild(true);
 if(location.hash==='#mine')dlg.classList.add('on');
