@@ -210,10 +210,22 @@ function isStravaCSV(t){
 }
 function dedupe(acts){
   acts.sort((a,b)=>a.i-b.i||a.hour-b.hour); const out=[];
-  acts.forEach(a=>{const dup=out.some(b=>b.i===a.i&&b.type===a.type&&Math.abs(b.hour-a.hour)<=1&&Math.abs(b.sec-a.sec)<Math.max(120,a.sec*.1));if(!dup)out.push(a)});
+  /* the same workout often arrives twice, from the watch maker and from Strava. Same day, same sport, starts within 2 hours,
+     and either a similar duration or a similar distance (moving and elapsed time can differ a lot, distance does not). */
+  const same=(a,b)=>b.i===a.i&&b.type===a.type&&Math.abs(b.hour-a.hour)<=2&&
+    (Math.abs(b.sec-a.sec)<Math.max(120,a.sec*.1)||(a.km>.3&&b.km>.3&&Math.abs(a.km-b.km)<Math.max(.3,Math.max(a.km,b.km)*.05)));
+  acts.forEach(a=>{
+    const k=out.find(b=>same(a,b));
+    if(!k){out.push(a);return}
+    /* keep one copy, but do not lose what only the other copy knows (heart rate, cadence, best efforts, the GPS file name) */
+    ['hr','cad','best','file','pace'].forEach(f=>{if(k[f]==null&&a[f]!=null)k[f]=a[f]});
+    if(!(k.elev>0)&&a.elev>0)k.elev=a.elev;
+  });
   return out;
 }
 /* the entry point: any mix of files in, activities and health series out */
+const INGEST_CACHE=new Map(), BEST_CACHE=new Map();
+const itemKey=it=>it.file?[it.file.name,it.file.size,it.file.lastModified,it.name].join('|'):null;
 async function ingest(files,onStatus,onProgress){
   const items=await collect(files), acts=[], H={vo2:[],rhr:[],sleep:[],steps:{}}, seen={}, errs=[], skipped=[];
   const note=(k,n)=>{const l=LABEL[k];seen[l]=(seen[l]||0)+n};
@@ -221,45 +233,67 @@ async function ingest(files,onStatus,onProgress){
   const src=async it=>{const st=await it.stream();return /\.gz$/i.test(it.name)?st.pipeThrough(new DecompressionStream('gzip')):st};
   const text=async it=>new Response(await src(it)).text();
   const buf=async it=>new Response(await src(it)).arrayBuffer();
-  let sleepAlt=[], done=0;
+  let sleepAlt=[];
+  /* a file that was already read is not read again: adding one more file to the set is instant */
+  const apply=r=>{
+    if(r.take)take(r.take); if(r.sleepAlt)sleepAlt=r.sleepAlt;
+    if(r.acts)acts.push(...r.acts.map(a=>({...a})));
+    (r.notes||[]).forEach(([k,n])=>note(k,n)); (r.seen||[]).forEach(([l,n])=>{seen[l]=(seen[l]||0)+n});
+  };
+  const work=items.filter(it=>it.kind&&it.kind!=='stravatrack'), hasTracks=items.some(it=>it.kind==='stravatrack');
+  const W=hasTracks?.45:1, prog=f=>{if(onProgress)onProgress(Math.max(0,Math.min(1,f)))};
+  let n=0, lastPct=-1;
   for(const it of items){
     if(!it.kind){skipped.push(it.name);continue}
     if(it.kind==='stravatrack')continue;
-    if(onStatus&&(done++%25===0||it.kind==='apple'))onStatus('Reading '+LABEL[it.kind]+'...');
+    n++; const key=itemKey(it);
+    if(key&&INGEST_CACHE.has(key)){apply(INGEST_CACHE.get(key));prog(n/work.length*W);continue}
+    if(onStatus&&(work.length<=3||n%10===1))onStatus('Reading '+LABEL[it.kind]+(work.length>3?' ('+n+' of '+work.length+')':'')+'...');
     try{
-      let a=null;
+      const r={}; let a=null;
       switch(it.kind){
-        case 'apple':{let p; try{p=await parseHealthWorker(it,onProgress)}catch(e){p=await parseHealth(await it.stream(),it.size,onProgress)} take(p);note('apple',p.counts.vo2+p.counts.rhr+p.counts.steps+p.counts.sleep);break}
-        case 'activitiescsv':{const t=await text(it);const isS=isStravaCSV(t);a=isS?stravaActs(t):garminCSV(t);if(a.length&&isS)seen['Strava']=(seen['Strava']||0)+a.length;else if(a.length)seen['Garmin']=(seen['Garmin']||0)+a.length;a=a.length?a:null;if(a)acts.push(...a);a=null;break}
+        case 'apple':{
+          const inner=p=>{prog((n-1+p)/work.length*W);const pc=Math.round(p*100);if(onStatus&&pc!==lastPct&&pc%5===0){lastPct=pc;onStatus('Reading Apple Health, '+pc+'%...')}};
+          let p; try{p=await parseHealthWorker(it,inner)}catch(e){p=await parseHealth(await it.stream(),it.size,inner)}
+          r.take=p; r.notes=[['apple',p.counts.vo2+p.counts.rhr+p.counts.steps+p.counts.sleep]]; break}
+        case 'activitiescsv':{const t=await text(it);const isS=isStravaCSV(t);a=isS?stravaActs(t):garminCSV(t);if(a.length){r.acts=a;r.seen=[[isS?'Strava':'Garmin',a.length]]}a=null;break}
         case 'garminjson':a=garminJSON(await text(it));break;
         case 'polar':a=polarJSON(await text(it));break;
-        case 'whoopcycles':take(whoopCycles(await text(it)));note('whoopcycles',1);break;
-        case 'whoopsleeps':{const p=whoopSleeps(await text(it));if(p.sleep.length)sleepAlt=p.sleep;note('whoopsleeps',1);break}
+        case 'whoopcycles':r.take=whoopCycles(await text(it));r.notes=[['whoopcycles',1]];break;
+        case 'whoopsleeps':{const p=whoopSleeps(await text(it));if(p.sleep.length)r.sleepAlt=p.sleep;r.notes=[['whoopsleeps',1]];break}
         case 'whoopworkouts':a=whoopWorkouts(await text(it));break;
-        case 'gfitdaily':take({steps:gfitDaily(await text(it),it.name)});note('gfitdaily',1);break;
+        case 'gfitdaily':r.take={steps:gfitDaily(await text(it),it.name)};r.notes=[['gfitdaily',1]];break;
         case 'fit':a=fitActs(await buf(it));break;
         case 'gpx':a=gpxActs(await text(it));break;
         case 'tcx':a=tcxActs(await text(it));break;
       }
-      if(a){acts.push(...a);note(it.kind,a.length)}
+      if(a){r.acts=a;r.notes=[[it.kind,a.length]]}
+      if(key)INGEST_CACHE.set(key,r); apply(r);
     }catch(e){errs.push(it.name.split('/').pop()+': '+e.message)}
+    prog(n/work.length*W);
+    if(n%10===0)await new Promise(r=>setTimeout(r,0));
   }
   if(!H.sleep.length&&sleepAlt.length)H.sleep=sleepAlt;
-  /* real best efforts from the Strava GPS tracks */
+  /* real best efforts from the Strava GPS tracks, remembered per track file */
   const tracks={}; items.forEach(it=>{if(it.kind==='stravatrack')tracks[it.name.split('/').pop().toLowerCase()]=it});
   const need=acts.filter(a=>a.type==='Run'&&a.file&&a.km>=5&&tracks[a.file.split('/').pop().toLowerCase()]);
   let bestN=0;
   for(let k=0;k<need.length;k++){
-    const a=need[k], it=tracks[a.file.split('/').pop().toLowerCase()];
-    if(onStatus&&k%5===0)onStatus('Finding your best efforts ('+(k+1)+' of '+need.length+')...');
+    const a=need[k], it=tracks[a.file.split('/').pop().toLowerCase()], key=itemKey(it);
+    if(onStatus&&k%5===0)onStatus('Finding your best efforts, run '+(k+1)+' of '+need.length+'...');
+    prog(W+(k/need.length)*(1-W));
+    if(key&&BEST_CACHE.has(key)){const be=BEST_CACHE.get(key);if(be){a.best=be;bestN++}continue}
+    let be=null;
     try{
       const name=it.name.toLowerCase(), raw=await src(it);
       const kind=/\.fit/.test(name)?'fit':/\.gpx/.test(name)?'gpx':'tcx';
       let tr; if(kind==='fit')tr=fitTrack(await new Response(raw).arrayBuffer()); else{const tx=await new Response(raw).text();tr=kind==='gpx'?gpxTrack(tx):tcxTrack(tx)}
-      const be=bestEfforts(tr); if(Object.keys(be).length){a.best=be;bestN++}
+      be=bestEfforts(tr); if(!Object.keys(be).length)be=null;
     }catch(e){}
+    if(key)BEST_CACHE.set(key,be); if(be){a.best=be;bestN++}
     if(k%10===0)await new Promise(r=>setTimeout(r,0));
   }
+  prog(1);
   if(bestN)seen['Best efforts from '+bestN+' runs']=bestN;
   const A=dedupe(acts);
   if(!A.length&&!H.rhr.length&&!H.sleep.length&&!Object.keys(H.steps).length){
