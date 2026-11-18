@@ -163,6 +163,14 @@ body.grid .viewport{position:static;overflow:visible}
 body.grid .track{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;transform:none!important;height:auto;transition:none}
 body.grid .card{flex:none;aspect-ratio:9/16;height:auto;border-radius:18px;cursor:pointer}
 body.grid .progress,body.grid .hint{display:none}
+.top .gridonly{display:none}
+body.grid .top .gridonly{display:inline-block}
+.top button:disabled{opacity:.45;cursor:default}
+.pick{display:none}
+body.grid .card{position:relative}
+body.grid .pick{display:flex;position:absolute;top:10px;right:10px;width:36px;height:36px;padding:0;border-radius:50%;border:2.5px solid #fff;background:#0007;color:transparent;align-items:center;justify-content:center;font:900 19px/1 sans-serif;cursor:pointer;z-index:5}
+body.grid .card.sel .pick{background:var(--accent);border-color:var(--accent);color:#0A1470}
+body.grid .card.sel{outline:4px solid var(--accent);outline-offset:-4px}
 
 /* catalog */
 .cat{display:none;width:100%;max-width:980px;margin:0 auto;padding:16px 16px 80px;align-self:flex-start}
@@ -219,6 +227,8 @@ tr.skip td{color:#7e8be0}
   <span class="spacer"></span>
   <button id="btnSave" type="button" title="Save this card as a 1080x1920 image for Instagram">Save card</button>
   <button id="btnSaveAll" type="button" title="Save every card as images in one zip">Save all</button>
+  <button id="btnPickAll" type="button" class="gridonly" title="Tick or untick every card">Select all</button>
+  <button id="btnSaveSel" type="button" class="gridonly" disabled title="Save the ticked cards as images">Save selected (0)</button>
   <button id="btnMine" type="button">Use my data</button>
   <button id="btnCards" type="button" class="on">Cards</button>
   <button id="btnGrid" type="button">All cards</button>

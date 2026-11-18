@@ -64,6 +64,14 @@ async function saveCurrent(){
   if(navigator.canShare&&navigator.canShare({files:[f]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({files:[f]});return}catch(e){if(e&&e.name==='AbortError')return}}
   saveBlob(b,pn(idx));
 }
+/* save only the chosen cards: shared as several images on a phone, otherwise one image or one zip */
+async function saveSelected(ids,setMsg){
+  ids=[...ids].sort((a,b)=>a-b); const files=[];
+  for(let k=0;k<ids.length;k++){setMsg('Drawing card '+(k+1)+' of '+ids.length+'...');const b=await cardToPNG(ids[k]);files.push({name:pn(ids[k]),blob:b,data:new Uint8Array(await b.arrayBuffer())})}
+  const fl=files.map(f=>new File([f.blob],f.name,{type:'image/png'}));
+  if(/Android|iPhone|iPad/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:fl})){try{await navigator.share({files:fl});return}catch(e){if(e&&e.name==='AbortError')return}}
+  if(files.length===1)saveBlob(files[0].blob,files[0].name); else saveBlob(makeZip(files),'2026-recap-selected.zip');
+}
 async function saveAll(setMsg){
   const files=[];
   for(let i=0;i<DECK.length;i++){setMsg('Drawing card '+(i+1)+' of '+DECK.length+'...');files.push({name:pn(i),data:new Uint8Array(await (await cardToPNG(i)).arrayBuffer())})}

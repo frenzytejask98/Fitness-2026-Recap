@@ -23,7 +23,7 @@ Drop in your export files, flip through your cards, and save them as 1080 x 1920
 1. Request your data exports (see below).
 2. Open the app and click **Use my data**.
 3. Drop all your files in at once. The app works out what each file is.
-4. Pick a template, swipe through the cards, then **Save card** or **Save all**.
+4. Pick a template, swipe through the cards, then **Save card**, **Save all**, or open **All cards**, tick the ones you want and press **Save selected**.
 
 **Your files never leave your computer.** They are read in the page itself. Nothing is uploaded, stored or sent anywhere.
 
@@ -47,7 +47,7 @@ Drop the zip or CSV exactly as you downloaded it. You do not need to unzip anyth
 
 ## Instagram
 
-Click **Save card** for the current card or **Save all** for a zip of every card. Images are 1080 x 1920, the Stories size. On a phone, **Save card** opens the share sheet so you can send it straight to Instagram.
+Click **Save card** for the current card or **Save all** for a zip of every card. In **All cards**, tick any cards you like and press **Save selected**: one card downloads as an image, several as a zip, and on a phone they open the share sheet together. Images are 1080 x 1920, the Stories size. On a phone, **Save card** opens the share sheet so you can send it straight to Instagram.
 
 Instagram has no web posting for stories, so post from the phone app. (Instagram's own data export does not contain any fitness data, so there is nothing to import from it.)
 

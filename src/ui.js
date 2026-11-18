@@ -14,8 +14,21 @@ function cardHTML(o,i,n){
 function render(){
   track.innerHTML=DECK.map((o,i)=>cardHTML(o,i,DECK.length)).join('');
   prog.innerHTML=DECK.map(()=>'<i></i>').join('');
+  /* tick boxes for "All cards" view; added to the live cards only, never to the exported images */
+  SEL.clear();
+  track.querySelectorAll('.card').forEach(c=>{const b=document.createElement('button');b.type='button';b.className='pick';b.setAttribute('aria-label','Select this card');b.textContent='\u2713';c.appendChild(b)});
+  updSel();
   requestAnimationFrame(fitBig);
 }
+const SEL=new Set();
+function updSel(){
+  track.querySelectorAll('.card').forEach(c=>c.classList.toggle('sel',SEL.has(+c.dataset.i)));
+  const n=SEL.size; $('btnSaveSel').textContent='Save selected ('+n+')'; $('btnSaveSel').disabled=!n;
+  $('btnPickAll').textContent=n===DECK.length?'Select none':'Select all';
+}
+track.addEventListener('click',e=>{const pk=e.target.closest('.pick'); if(!pk)return; const i=+pk.parentNode.dataset.i; SEL.has(i)?SEL.delete(i):SEL.add(i); updSel()});
+$('btnPickAll').onclick=()=>{if(SEL.size===DECK.length)SEL.clear(); else DECK.forEach((_,i)=>SEL.add(i)); updSel()};
+$('btnSaveSel').onclick=async()=>{const b=$('btnSaveSel');b.disabled=true;try{await saveSelected([...SEL],m=>{if(m)b.textContent=m})}catch(e){alert(e.message)}updSel()};
 function fitBig(){
   document.querySelectorAll('.big:not(.xs)').forEach(el=>{
     const card=el.closest('.card'), cw=card.clientWidth/100; if(!cw)return;
@@ -59,7 +72,7 @@ let sx=null;
 stage.addEventListener('pointerdown',e=>{sx=e.clientX});
 stage.addEventListener('pointerup',e=>{
   if(sx===null)return; const dx=e.clientX-sx; sx=null;
-  if(mode==='grid'){const c=e.target.closest('.card');if(c){idx=+c.dataset.i;setMode('cards')}return}
+  if(mode==='grid'){if(e.target.closest('.pick'))return;const c=e.target.closest('.card');if(c){idx=+c.dataset.i;setMode('cards')}return}
   if(Math.abs(dx)>40){go(idx+(dx<0?1:-1));return}
   const r=stage.getBoundingClientRect(); go(e.clientX-r.left<r.width*.35?idx-1:idx+1);
 });

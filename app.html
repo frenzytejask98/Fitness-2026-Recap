@@ -163,6 +163,14 @@ body.grid .viewport{position:static;overflow:visible}
 body.grid .track{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;transform:none!important;height:auto;transition:none}
 body.grid .card{flex:none;aspect-ratio:9/16;height:auto;border-radius:18px;cursor:pointer}
 body.grid .progress,body.grid .hint{display:none}
+.top .gridonly{display:none}
+body.grid .top .gridonly{display:inline-block}
+.top button:disabled{opacity:.45;cursor:default}
+.pick{display:none}
+body.grid .card{position:relative}
+body.grid .pick{display:flex;position:absolute;top:10px;right:10px;width:36px;height:36px;padding:0;border-radius:50%;border:2.5px solid #fff;background:#0007;color:transparent;align-items:center;justify-content:center;font:900 19px/1 sans-serif;cursor:pointer;z-index:5}
+body.grid .card.sel .pick{background:var(--accent);border-color:var(--accent);color:#0A1470}
+body.grid .card.sel{outline:4px solid var(--accent);outline-offset:-4px}
 
 /* catalog */
 .cat{display:none;width:100%;max-width:980px;margin:0 auto;padding:16px 16px 80px;align-self:flex-start}
@@ -219,6 +227,8 @@ tr.skip td{color:#7e8be0}
   <span class="spacer"></span>
   <button id="btnSave" type="button" title="Save this card as a 1080x1920 image for Instagram">Save card</button>
   <button id="btnSaveAll" type="button" title="Save every card as images in one zip">Save all</button>
+  <button id="btnPickAll" type="button" class="gridonly" title="Tick or untick every card">Select all</button>
+  <button id="btnSaveSel" type="button" class="gridonly" disabled title="Save the ticked cards as images">Save selected (0)</button>
   <button id="btnMine" type="button">Use my data</button>
   <button id="btnCards" type="button" class="on">Cards</button>
   <button id="btnGrid" type="button">All cards</button>
@@ -1167,6 +1177,14 @@ async function saveCurrent(){
   if(navigator.canShare&&navigator.canShare({files:[f]})&&/Android|iPhone|iPad/i.test(navigator.userAgent)){try{await navigator.share({files:[f]});return}catch(e){if(e&&e.name==='AbortError')return}}
   saveBlob(b,pn(idx));
 }
+/* save only the chosen cards: shared as several images on a phone, otherwise one image or one zip */
+async function saveSelected(ids,setMsg){
+  ids=[...ids].sort((a,b)=>a-b); const files=[];
+  for(let k=0;k<ids.length;k++){setMsg('Drawing card '+(k+1)+' of '+ids.length+'...');const b=await cardToPNG(ids[k]);files.push({name:pn(ids[k]),blob:b,data:new Uint8Array(await b.arrayBuffer())})}
+  const fl=files.map(f=>new File([f.blob],f.name,{type:'image/png'}));
+  if(/Android|iPhone|iPad/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:fl})){try{await navigator.share({files:fl});return}catch(e){if(e&&e.name==='AbortError')return}}
+  if(files.length===1)saveBlob(files[0].blob,files[0].name); else saveBlob(makeZip(files),'2026-recap-selected.zip');
+}
 async function saveAll(setMsg){
   const files=[];
   for(let i=0;i<DECK.length;i++){setMsg('Drawing card '+(i+1)+' of '+DECK.length+'...');files.push({name:pn(i),data:new Uint8Array(await (await cardToPNG(i)).arrayBuffer())})}
@@ -1188,8 +1206,21 @@ function cardHTML(o,i,n){
 function render(){
   track.innerHTML=DECK.map((o,i)=>cardHTML(o,i,DECK.length)).join('');
   prog.innerHTML=DECK.map(()=>'<i></i>').join('');
+  /* tick boxes for "All cards" view; added to the live cards only, never to the exported images */
+  SEL.clear();
+  track.querySelectorAll('.card').forEach(c=>{const b=document.createElement('button');b.type='button';b.className='pick';b.setAttribute('aria-label','Select this card');b.textContent='\u2713';c.appendChild(b)});
+  updSel();
   requestAnimationFrame(fitBig);
 }
+const SEL=new Set();
+function updSel(){
+  track.querySelectorAll('.card').forEach(c=>c.classList.toggle('sel',SEL.has(+c.dataset.i)));
+  const n=SEL.size; $('btnSaveSel').textContent='Save selected ('+n+')'; $('btnSaveSel').disabled=!n;
+  $('btnPickAll').textContent=n===DECK.length?'Select none':'Select all';
+}
+track.addEventListener('click',e=>{const pk=e.target.closest('.pick'); if(!pk)return; const i=+pk.parentNode.dataset.i; SEL.has(i)?SEL.delete(i):SEL.add(i); updSel()});
+$('btnPickAll').onclick=()=>{if(SEL.size===DECK.length)SEL.clear(); else DECK.forEach((_,i)=>SEL.add(i)); updSel()};
+$('btnSaveSel').onclick=async()=>{const b=$('btnSaveSel');b.disabled=true;try{await saveSelected([...SEL],m=>{if(m)b.textContent=m})}catch(e){alert(e.message)}updSel()};
 function fitBig(){
   document.querySelectorAll('.big:not(.xs)').forEach(el=>{
     const card=el.closest('.card'), cw=card.clientWidth/100; if(!cw)return;
@@ -1233,7 +1264,7 @@ let sx=null;
 stage.addEventListener('pointerdown',e=>{sx=e.clientX});
 stage.addEventListener('pointerup',e=>{
   if(sx===null)return; const dx=e.clientX-sx; sx=null;
-  if(mode==='grid'){const c=e.target.closest('.card');if(c){idx=+c.dataset.i;setMode('cards')}return}
+  if(mode==='grid'){if(e.target.closest('.pick'))return;const c=e.target.closest('.card');if(c){idx=+c.dataset.i;setMode('cards')}return}
   if(Math.abs(dx)>40){go(idx+(dx<0?1:-1));return}
   const r=stage.getBoundingClientRect(); go(e.clientX-r.left<r.width*.35?idx-1:idx+1);
 });
